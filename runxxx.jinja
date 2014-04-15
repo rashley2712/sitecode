@@ -1,0 +1,61 @@
+<html>
+<head>
+<link rel="stylesheet" type="text/css" href="../style.css">
+<script src="../js/jquery-2.0.3.min.js"></script>
+<script src="../js/utils.js"></script>
+<script type="text/javascript" src="https://www.google.com/jsapi"></script>
+
+<script language="Javascript">
+	// Call a function only when the page is fully loaded.
+	window.addEventListener("load", eventWindowLoaded, false);
+	google.load("visualization", "1", {packages:["corechart"]});
+	runName = "{{ runName }}";
+
+</script>
+</head>
+
+<body>
+
+<table>
+	<tr>
+		<th>Date</th>
+		<th>Run</th>
+		<th>Status</th>
+<<<<<<< HEAD
+		<th>Comments</th>
+	</tr>
+	<tr>
+		<td>2013-07-21</td>
+		<td>{{ runName }}</td>
+		<td><span id='rStatus' class="statusNotOK">R</span><span id="gStatus" class="statusNotOK">G</span><span id="bStatus" class="statusNotOK">B</span></td>
+		<td>{{ comments }}</td>
+=======
+	</tr>
+	<tr>
+		<td>{{ date }}</td>
+		<td>{{ runName }}</td>
+		<td><span id='rStatus' class="statusNotOK">R</span><span id="gStatus" class="statusNotOK">G</span><span id="bStatus" class="statusNotOK">B</span></td><td>{{ comments }}</td>
+>>>>>>> 5352525b681f758612c7d0bbe3a03bb29c8b69ad
+	</tr>
+	
+</table>
+
+<div style="width: 1080px; height: 1032px; -webkit-transform: scale(1.0,1.0); -moz-transform: scale(1.0,1.0)">
+<canvas id="ImageCanvas" width="1080" height="1032">
+	Fallback content, in case the browser does not support Canvas.
+</canvas>
+</div>
+<div id="MouseLocation"></div>
+</br>
+<div id="SelectedObjectTable"></div>
+<div id="chart_div_r" style="width: 1080px; height: 400px;"></div>
+<div id="chart_div_g" style="width: 1080px; height: 400px;"></div>
+<div id="chart_div_b" style="width: 1080px; height: 400px;"></div>
+<div id="ObjectTable"></div>
+<p class="debugstyle">
+	<span id="debugPanel"></span>
+</p>
+
+</body>
+
+</html>
