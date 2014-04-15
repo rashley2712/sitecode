@@ -29,12 +29,12 @@ var circles = false;
 			checkAllDataLoaded();
 			});
 		$.getJSON(gJSONFile, function (data) {
-			console.log("got the data for the red channel");
+			console.log("got the data for the green channel");
 			loadedGreen = parseObjectData(data, greenObjectList, "#gStatus");
 			checkAllDataLoaded();
 			});
 		$.getJSON(bJSONFile, function (data) {
-			console.log("got the data for the red channel");
+			console.log("got the data for the blue channel");
 			loadedBlue = parseObjectData(data, blueObjectList, "#bStatus");
 			checkAllDataLoaded();
 			});
@@ -51,11 +51,21 @@ var circles = false;
 		if (!loadedBlue) return;
 		
 		debug("All data successfully loaded");
+		console.log("All data successfully loaded.");
+		
 		
 		// Get the x,y position from the red channel
-		for (i in masterObjectList) {
-			masterObjectList[i].x = redObjectList[masterObjectList[i].red_id].x; 
-			masterObjectList[i].y = redObjectList[masterObjectList[i].red_id].y; 
+		console.log(masterObjectList.length)
+		for (var i=0; i<masterObjectList.length; i++) {
+			masterObject = masterObjectList[i]
+			object = getObjectById(redObjectList, masterObject.r);
+			if (object!=null) {
+				masterObjectList[i].x = object.x; 
+				masterObjectList[i].y = object.y;
+			} else {
+				masterObjectList[i].x = 0;
+				masterObjectList[i].y = 0;
+			}  
 		}
 		drawObjectTable();
 		toggleCircles();
@@ -73,14 +83,14 @@ var circles = false;
 	}
 		
 	function listObjects() {
-		for (i in masterObjectList) {
+		for (var i in masterObjectList) {
 			object = masterObjectList[i]
 			console.log(object.id + " (" + object.x + ", " + object.y +") frames: " + object.data.length + " last counts: " + object.data[object.data.length-1][1])
 		}
 	}
 	
 	function getObjectById(objects, id) {
-		for (i in objects) {
+		for (var i in objects) {
 			if (objects[i].id == id) return objects[i]
 		}
 		
@@ -97,8 +107,8 @@ var circles = false;
 			tableString+= "<td>" + object.id;
 			tableString+=" (" + parseInt(object.x) + ", " + parseInt(object.y)  + ")";
 			tableString+= "</td>";
-			if (object.red_id!=-1) {
-				redObject = getObjectById(redObjectList, object.red_id);
+			if (object.r!=-1) {
+				redObject = getObjectById(redObjectList, object.r);
 				tableString+="<td><table>";
 				tableString+="<tr>";
 				tableString+="<td>(" + parseInt(redObject.x) + ", " + parseInt(redObject.y) + ")</td>";
@@ -108,8 +118,8 @@ var circles = false;
 			} else {
 				tableString+="<td>none</td>"
 			}
-			if (object.green_id!=-1) {
-				greenObject = getObjectById(greenObjectList, object.green_id);
+			if (object.g!=-1) {
+				greenObject = getObjectById(greenObjectList, object.g);
 				tableString+="<td><table>";
 				tableString+="<tr>";
 				tableString+="<td>(" + parseInt(greenObject.x) + ", " + parseInt(greenObject.y)  + ")</td>";
@@ -119,8 +129,8 @@ var circles = false;
 			} else {
 				tableString+="<td>none</td>"
 			}
-			if (object.blue_id!=-1) {
-				blueObject = getObjectById(blueObjectList, object.blue_id);
+			if (object.b!=-1) {
+				blueObject = getObjectById(blueObjectList, object.b);
 				tableString+="<td><table>";
 				tableString+="<tr>";
 				tableString+="<td>(" + parseInt(blueObject.x) + ", " + parseInt(blueObject.y)  + ")</td>";
@@ -145,22 +155,25 @@ var circles = false;
 	
 	function jsonLoadedRGB(data) {
 		numberObjects = data.length;
-		debug(numberObjects + " objects loaded");
+		debug(numberObjects + " colour objects loaded");
 		masterObjectList = [];
 		for (i in data) {
 			dataLine = data[i]
 			dataObject = JSON.parse(dataLine);		
 			masterObjectList.push(dataObject);
-			console.log(dataObject);
 			}
 		loadedMaster = true;
 		checkAllDataLoaded();
+		console.log(masterObjectList.length + " objects parsed.");
+		console.log("One sample master record:");
+		console.log(masterObjectList[2])
+		console.log(masterObjectList[2].r)
 		
 	}
 
 	function parseObjectData(data, objectList, statusAttribute) {
 		numberObjects = data.length;
-		debug(numberObjects + " objects loaded");
+		debug(numberObjects + " objects loaded " + statusAttribute);
 		if (objectList.length!=0) {
 			console.log("The objectList wasn't empty.... won't load new ones.");
 			return false;
@@ -169,7 +182,7 @@ var circles = false;
 			dataLine = data[i]
 			dataObject = JSON.parse(dataLine);		
 			objectList.push(dataObject);
-			console.log(dataObject);
+			//console.log(dataObject);
 			}
 
 		$(statusAttribute).attr('class', 'statusOK');
@@ -301,8 +314,8 @@ var circles = false;
 		var dataArray = [['MJD', 'Counts']];
 		// Do the red channel
 		console.log("Drawing the red chart");
-		if (selectedObject.red_id!=-1) {
-			redObject = redObjectList[selectedObject.red_id];
+		if (selectedObject.r!=-1) {
+			redObject = redObjectList[selectedObject.r];
 			for (i=0; i<redObject.data.length; i++) {
 				console.log("MJD: " + redObject.data[i][0] + " Counts:" + redObject.data[i][1]);
 				if (redObject.data[i][0]!=51544) {
@@ -326,8 +339,8 @@ var circles = false;
 	function drawChartG() {
 		var dataArray = [['MJD', 'Counts']];
 		// Do the green channel
-		if (selectedObject.green_id!=-1) {
-			object = greenObjectList[selectedObject.green_id];
+		if (selectedObject.g!=-1) {
+			object = greenObjectList[selectedObject.g];
 			for (i=0; i<object.data.length; i++) {
 				if (object.data[i][0]!=51544) {
 					temp = [object.data[i][0], object.data[i][1]];
@@ -350,8 +363,8 @@ var circles = false;
 	function drawChartB() {
 		var dataArray = [['MJD', 'Counts']];
 		// Do the blue channel
-		if (selectedObject.blue_id!=-1) {
-			object = blueObjectList[selectedObject.blue_id];
+		if (selectedObject.b!=-1) {
+			object = blueObjectList[selectedObject.b];
 			for (i=0; i<object.data.length; i++) {
 				if (object.data[i][0]!=51544) {
 					temp = [object.data[i][0], object.data[i][1]];
