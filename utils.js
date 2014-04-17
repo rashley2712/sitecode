@@ -11,6 +11,41 @@ var selectedObject;
 var width, height;	
 var context;
 var circles = false;
+
+	function wcsSolution() {
+		this.equinox = 0;	
+	}
+	
+	wcsSolution.prototype.init = function(data){
+		this.equinox = data.equinox;
+		this.x_ref = data.x_ref;
+		this.y_ref = data.y_ref;
+		this.ra = data.ra;
+		this.dec = data.dec;
+		this.CD_1_1 = data.CD_1_1;
+		this.CD_1_2 = data.CD_1_2;
+		this.CD_2_1 = data.CD_2_1;
+		this.CD_2_2 = data.CD_2_2;
+	}
+
+	wcsSolution.prototype.toString = function(){
+		outStr = "RA: " + this.ra + " DEC: " + this.dec;
+		return outStr;
+	}
+	
+	wcsSolution.prototype.pixelToWorld = function(x, y) {
+		abs_x = x - this.x_ref;
+		abs_y = y - this.y_ref;
+		world_x = this.CD_1_1 * abs_x + this.CD_1_2 * abs_y;
+		world_y = this.CD_2_1 * abs_x + this.CD_2_2 * abs_y;
+		
+		world_x = world_x + this.ra
+		world_y = world_y + this.dec
+		
+		worldCoord = {wx: world_x, wy: world_y}
+		
+		return worldCoord;
+	}
 	
 	
 	function eventWindowLoaded() {
@@ -21,7 +56,9 @@ var circles = false;
 		gJSONFile = runName + "_g.json";
 		bJSONFile = runName + "_b.json";
 		imageFile = runName + "_r.png";
+		wcsSolutionFile = runName + "_r_wcs.json"
 		
+		$.getJSON(wcsSolutionFile, wcsLoaded);
 		$.getJSON(rgbJSONFile, jsonLoadedRGB);
 		$.getJSON(rJSONFile, function (data) {
 			console.log("got the data for the red channel");
@@ -42,6 +79,33 @@ var circles = false;
 		clearCanvas();
 		loadPNG(imageFile);
 		document.onkeydown = handleKeyPressed;
+	}
+	
+	function wcsLoaded(data) {
+		console.log("Loaded the WCS data");
+		console.log(data);
+		wcsSolutionRed = new wcsSolution();
+		
+		wcsSolutionRed.init(data);
+		
+		console.log("WCS loaded: Equinox is: "+ wcsSolutionRed.equinox);
+		
+		debug("WCS solution: " + wcsSolutionRed.toString());
+
+		console.log("Trial world: ");
+		console.log(wcsSolutionRed.pixelToWorld(500,500));
+
+	}
+	
+	function degToSexString(angle) {
+		degrees = Math.floor(angle);
+		remainder = angle - degrees;
+		minutes = Math.floor(remainder * 60);
+		seconds = ((remainder * 60) - minutes) * 60;
+		
+		outStr = $.format.number(degrees, '00') + ":" + $.format.number(minutes,'00') + ":" + $.format.number(seconds, '00.000');
+		
+		return outStr;
 	}
 	
 	function checkAllDataLoaded() {
@@ -68,7 +132,7 @@ var circles = false;
 			}  
 		}
 		drawObjectTable();
-		toggleCircles();
+		//toggleCircles();
 	}
 	
 	function handleKeyPressed(e) {
@@ -236,6 +300,10 @@ var circles = false;
 		currentObject = getObjectUnderMouseCursor(x, y);
 		if (currentObject!=0) cursorString+= " [" + currentObject.id + "]";
 		$('#MouseLocation').text(cursorString);
+		worldLocation = wcsSolutionRed.pixelToWorld(x, y);
+		worldLocationString = "RA: " + degToSexString(worldLocation.wx / 15);
+		worldLocationString+= " DEC: " + degToSexString(worldLocation.wy);
+		$('#MouseWorldLocation').text(worldLocationString);
 	}
 	
 	function distance(x1, y1, x2, y2) {
@@ -424,3 +492,7 @@ function formatTime(date) {
 	timeString = hours + ":" + minutes + ":" + seconds + "." + millis;
 	return timeString;
 }
+
+function zfill(num, len) {
+	return (Array(len).join("0") + num).slice(-len);}
+
