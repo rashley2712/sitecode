@@ -290,20 +290,34 @@ var circles = false;
 	}
 	
 	function mouseMoved(evt) {
-		x = parseInt(evt.offsetX);
-		y = height - parseInt(evt.offsetY);
+		var x = parseInt(evt.offsetX);
+		var y = height - parseInt(evt.offsetY);
 		if (isNaN(x)) {
 			x = evt.layerX;
 			y = height - evt.layerY;
 		}
+		
+		windowY = height - y;
+		
 		cursorString = " (" + x + ", " + y + ")";
 		currentObject = getObjectUnderMouseCursor(x, y);
 		if (currentObject!=0) cursorString+= " [" + currentObject.id + "]";
 		$('#MouseLocation').text(cursorString);
 		worldLocation = wcsSolutionRed.pixelToWorld(x, y);
-		worldLocationString = "RA: " + degToSexString(worldLocation.wx / 15);
-		worldLocationString+= " DEC: " + degToSexString(worldLocation.wy);
-		$('#MouseWorldLocation').text(worldLocationString);
+		worldLocationString = "&alpha;:" + degToSexString(worldLocation.wx / 15);
+		worldLocationString+= "<br/>&delta;:" + degToSexString(worldLocation.wy);
+		$('#MouseWorldLocation').html(worldLocationString);
+		
+		// Move the location of the 'hovertext'
+		$('#HoverText').css('left', (x+10) + 'px');
+		$('#HoverText').css('top', windowY+10 + 'px');
+		$('#HoverText').html(worldLocationString);
+		if (currentObject!=0) {
+			$('#HoverText').css('background-color', 'green');
+		} else {
+			$('#HoverText').css('background-color', '#000000');
+		}
+
 	}
 	
 	function distance(x1, y1, x2, y2) {
