@@ -7,6 +7,7 @@ var greenObjectList = new Array();
 var blueObjectList = new Array();
 var filteredObjectList = new Array();
 var loadedMaster = false, loadedGreen = false, loadedRed = false, loadedBlue = false;
+var loadedWCS = false;
 var selectedObject;
 var width, height;	
 var context;
@@ -94,7 +95,7 @@ var circles = false;
 
 		console.log("Trial world: ");
 		console.log(wcsSolutionRed.pixelToWorld(500,500));
-
+		loadedWCS = true;
 	}
 	
 	function degToSexString(angle) {
@@ -221,7 +222,7 @@ var circles = false;
 		numberObjects = data.length;
 		debug(numberObjects + " colour objects loaded");
 		masterObjectList = [];
-		for (i in data) {
+		for (var i in data) {
 			dataLine = data[i]
 			dataObject = JSON.parse(dataLine);		
 			masterObjectList.push(dataObject);
@@ -229,10 +230,10 @@ var circles = false;
 		loadedMaster = true;
 		checkAllDataLoaded();
 		console.log(masterObjectList.length + " objects parsed.");
-		console.log("One sample master record:");
-		console.log(masterObjectList[2])
-		console.log(masterObjectList[2].r)
-		
+		for (var i in masterObjectList) {
+			console.log(i);
+			console.log(masterObjectList[i]);
+		}
 	}
 
 	function parseObjectData(data, objectList, statusAttribute) {
@@ -303,15 +304,22 @@ var circles = false;
 		currentObject = getObjectUnderMouseCursor(x, y);
 		if (currentObject!=0) cursorString+= " [" + currentObject.id + "]";
 		$('#MouseLocation').text(cursorString);
-		worldLocation = wcsSolutionRed.pixelToWorld(x, y);
-		worldLocationString = "&alpha;:" + degToSexString(worldLocation.wx / 15);
-		worldLocationString+= "<br/>&delta;:" + degToSexString(worldLocation.wy);
-		$('#MouseWorldLocation').html(worldLocationString);
+
+		if (loadedWCS) {
+			worldLocation = wcsSolutionRed.pixelToWorld(x, y);
+			worldLocationString = "&alpha;:" + degToSexString(worldLocation.wx / 15);
+			worldLocationString+= "<br/>&delta;:" + degToSexString(worldLocation.wy);
+			$('#MouseWorldLocation').html(worldLocationString);
+		}
 		
 		// Move the location of the 'hovertext'
 		$('#HoverText').css('left', (x+10) + 'px');
 		$('#HoverText').css('top', windowY+10 + 'px');
-		$('#HoverText').html(worldLocationString);
+		if (loadedWCS) {
+			$('#HoverText').html(worldLocationString);
+		} else  {
+			$('#HoverText').html(cursorString);
+		}
 		if (currentObject!=0) {
 			$('#HoverText').css('background-color', 'green');
 		} else {
@@ -395,17 +403,23 @@ var circles = false;
 	function drawChartR() {
 		var dataArray = [['MJD', 'Counts']];
 		// Do the red channel
-		console.log("Drawing the red chart");
 		if (selectedObject.r!=-1) {
-			redObject = redObjectList[selectedObject.r];
-			for (i=0; i<redObject.data.length; i++) {
-				console.log("MJD: " + redObject.data[i][0] + " Counts:" + redObject.data[i][1]);
-				if (redObject.data[i][0]!=51544) {
-					temp = [redObject.data[i][0], redObject.data[i][1]];
+			// Reveal the chart area
+			$('#chart_div_r').css('height', '400px');
+			object = getObjectById(redObjectList, selectedObject.r);
+			for (i=0; i<object.data.length; i++) {
+				//console.log("MJD: " + redObject.data[i][0] + " Counts:" + redObject.data[i][1]);
+				if (object.data[i][0]!=51544) {
+					temp = [object.data[i][0], object.data[i][1]];
 					dataArray.push(temp);
 				}
 			}
-		} else return;
+		} else {
+			// Hide the chart area
+			$('#chart_div_r').css('height', '0px');
+			$('#chart_div_r').empty();
+			return;
+		}
 	        	
 		var dataTable = google.visualization.arrayToDataTable(dataArray);
 
@@ -422,14 +436,21 @@ var circles = false;
 		var dataArray = [['MJD', 'Counts']];
 		// Do the green channel
 		if (selectedObject.g!=-1) {
-			object = greenObjectList[selectedObject.g];
+			// Reveal the chart area
+			$('#chart_div_g').css('height', '400px');
+			object = getObjectById(greenObjectList, selectedObject.g);
 			for (i=0; i<object.data.length; i++) {
 				if (object.data[i][0]!=51544) {
 					temp = [object.data[i][0], object.data[i][1]];
 					dataArray.push(temp);
 				}
 			}
-		} else return;
+		} else {
+			// Hide the chart area
+			$('#chart_div_g').css('height', '0px');
+			$('#chart_div_g').empty();
+			return;
+		}
 	        	
 		var dataTable = google.visualization.arrayToDataTable(dataArray);
 
@@ -446,22 +467,28 @@ var circles = false;
 		var dataArray = [['MJD', 'Counts']];
 		// Do the blue channel
 		if (selectedObject.b!=-1) {
-			object = blueObjectList[selectedObject.b];
+			// Reveal the chart area
+			$('#chart_div_b').css('height', '400px');
+			object = getObjectById(blueObjectList, selectedObject.b);
 			for (i=0; i<object.data.length; i++) {
 				if (object.data[i][0]!=51544) {
 					temp = [object.data[i][0], object.data[i][1]];
 					dataArray.push(temp);
 				}
 			}
-		} else return;
+		} else {
+			// Hide the chart area
+			$('#chart_div_b').css('height', '0px');
+			$('#chart_div_b').empty();
+			return;
+		}
 	        	
 		var dataTable = google.visualization.arrayToDataTable(dataArray);
 
         var options = {
-			title: 'Counts for Object: ' + selectedObject.id,
+			title: 'Counts for Object: ' + selectedObject.id + ' blueID: ' + selectedObject.b,
 			colors: ['blue']
         	}
-
         var chart = new google.visualization.LineChart(document.getElementById('chart_div_b'));
         chart.draw(dataTable, options);
 	}
