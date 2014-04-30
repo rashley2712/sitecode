@@ -17,17 +17,22 @@
 
 <body>
 
-<table>
+<table width="1080px">
 	<tr>
 		<th>Date</th>
 		<th>Run</th>
-		<th>Status</th>
+		<th>Object</th>
+		<th>Run duration</th>
 		<th>Comments</th>
+		<th>Status</th>
 	</tr>
 	<tr>
 		<td>{{ date }}</td>
 		<td>{{ runName }}</td>
-		<td><span id='rStatus' class="statusNotOK">R</span><span id="gStatus" class="statusNotOK">G</span><span id="bStatus" class="statusNotOK">B</span></td><td>{{ comments }}</td>
+		<td>{{ object }}</td>
+		<td>{{ duration }}</td>
+		<td>{{ comments }}</td>
+		<td><span id='rStatus' class="statusNotOK">R</span><span id="gStatus" class="statusNotOK">G</span><span id="bStatus" class="statusNotOK">B</span></td>
 	</tr>
 	
 </table>
