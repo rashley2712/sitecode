@@ -30,7 +30,7 @@
 	
 	{% for run in runs %}
 	<tr>
-		<td class="left"><img src="{{ run.thumbnailURI }}"></td>
+		<td class="left"><a href="{{ run.runURL }}"><img src="{{ run.thumbnailURI }}"></a></td>
 		<td class="left">{{ run.runName }}</td>
 		<td class="left">{{ run.target }}</td>
 		<td class="left">{{ run.runDuration }}</td>
