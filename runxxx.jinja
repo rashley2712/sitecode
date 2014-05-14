@@ -18,6 +18,12 @@
 
 <body>
 
+<!-- COMMAND WINDOW -->
+<p class="debugstyle">
+	<span id="commandWindow"></span>
+</p>
+
+<!-- RUNINFO TABLE -->
 <table width="1080px">
 	<tr>
 		<th>Date</th>
@@ -38,6 +44,7 @@
 	
 </table>
 
+<!-- IMAGE AREA -->
 <div style="width: 1080px; height: 1032px; -webkit-transform: scale(1.0,1.0); -moz-transform: scale(1.0,1.0)">
 <canvas id="ImageCanvas" width="1080" height="1032">
 	Fallback content, in case the browser does not support Canvas.
@@ -49,11 +56,15 @@
 <div id="MouseLocation"></div><br/>
 <div id="MouseWorldLocation"></div>
 <br/>
+
+<!-- OBJECT TABLE -->
 <div id="SelectedObjectTable"></div>
 <div id="chart_div_r" style="width: 1080px; height: 0px;"></div>
 <div id="chart_div_g" style="width: 1080px; height: 0px;"></div>
 <div id="chart_div_b" style="width: 1080px; height: 0px;"></div>
 <div id="ObjectTable"></div>
+
+<!-- DEBUG AREA -->
 <p class="debugstyle">
 	<span id="debugPanel"></span>
 </p>

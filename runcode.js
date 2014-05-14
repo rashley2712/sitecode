@@ -1,10 +1,23 @@
 var debugText = [];
 var debugHistory = 15;
+var commandWindowText = [];
+var commandWindowHistory = 5;
+
+var colourDescriptions = { 'r': 'red', 'g': 'green', 'b':'blue' };
+
+var commandHelpHTML = "Available commands: <br/>\
+					<b>c</b> - show object 'circles'. <br/>\
+					<b>l</b> - show object labels (IDs). <br/>\
+					<b>r</b> - switch base image to 'red'. <br/>\
+					<b>g</b> - switch base image to 'green'.<br/>\
+					<b>b</b> - switch base image to 'blue'.<br/>"
 
 var masterObjectList = new Array();
 var redObjectList = new Array();
 var greenObjectList = new Array();
 var blueObjectList = new Array();
+var allObjects = {};
+var baseCatalog = [];
 var filteredObjectList = new Array();
 var loadedMaster = false, loadedGreen = false, loadedRed = false, loadedBlue = false;
 var loadedWCS = false;
@@ -12,6 +25,7 @@ var selectedObject;
 var width, height;	
 var context;
 var circles = false;
+var baseImage = 'r';
 
 	function wcsSolution() {
 		this.equinox = 0;	
@@ -51,12 +65,13 @@ var circles = false;
 	
 	function eventWindowLoaded() {
 		debug("Loading the JSON data");
-		
+		writeToCommandWindow("Run: " + runName);
+		writeToCommandWindow("Loading the object data... please wait...");
 		rgbJSONFile = runName + "_rgb.json";
 		rJSONFile = runName + "_r.json";
 		gJSONFile = runName + "_g.json";
 		bJSONFile = runName + "_b.json";
-		imageFile = runName + "_r.png";
+		imageFile = runName + "_" + baseImage + ".png";
 		wcsSolutionFile = runName + "_r_wcs.json"
 		
 		$.getJSON(wcsSolutionFile, wcsLoaded);
@@ -64,16 +79,19 @@ var circles = false;
 		$.getJSON(rJSONFile, function (data) {
 			console.log("got the data for the red channel");
 			loadedRed = parseObjectData(data, redObjectList, "#rStatus");
+			allObjects['r'] = redObjectList;
 			checkAllDataLoaded();
 			});
 		$.getJSON(gJSONFile, function (data) {
 			console.log("got the data for the green channel");
 			loadedGreen = parseObjectData(data, greenObjectList, "#gStatus");
+			allObjects['g'] = greenObjectList;
 			checkAllDataLoaded();
 			});
 		$.getJSON(bJSONFile, function (data) {
 			console.log("got the data for the blue channel");
 			loadedBlue = parseObjectData(data, blueObjectList, "#bStatus");
+			allObjects['b'] = blueObjectList;
 			checkAllDataLoaded();
 			});
 		initCanvas();
@@ -117,7 +135,11 @@ var circles = false;
 		
 		debug("All data successfully loaded");
 		console.log("All data successfully loaded.");
+		writeToCommandWindow("Data loaded.");
+		writeToCommandWindow("Press 'h' for a list of commands.");
 		
+		baseCatalog = allObjects['r'];
+		console.log("Set the base catalog to 'r'");
 		
 		// Get the x,y position from the red channel
 		console.log(masterObjectList.length)
@@ -143,6 +165,18 @@ var circles = false;
 		switch(e.keyCode) {
 			case 67: //Toggle the circles
 				toggleCircles();
+				break;
+			case 82: // 'r' pressed switch to red image
+				switchBaseImage('r');
+				break;
+			case 71: // 'g' pressed, switch to green image
+				switchBaseImage('g');
+				break;
+			case 66: // 'b' pressed, switch to blue image
+				switchBaseImage('b');
+				break;
+			case 72: // 'h' pressed, show the help message
+				writeToCommandWindow(commandHelpHTML);
 				break;
 		}
 	}
@@ -344,20 +378,48 @@ var circles = false;
 	}
 	
 	function getObjectUnderMouseCursor(x, y) {
-		object = 0
-		for (i in masterObjectList) {
-		 	ox = masterObjectList[i].x;
-		 	oy = masterObjectList[i].y;
-			if (distance(x, y, ox, oy)<15) object = masterObjectList[i]
+		object = 0;
+		objectReference = 0;
+		for (i in baseCatalog) {
+		 	ox = baseCatalog[i].x;
+		 	oy = baseCatalog[i].y;
+			if (distance(x, y, ox, oy)<15) objectReference = baseCatalog[i]
 			}
+		if (objectReference!=0) object = lookupMasterObject(objectReference.id, baseImage);
 		return object
+	}
+	
+	function lookupMasterObject(id, colour) {
+		if (colour=='r') {
+			for (var i in masterObjectList) if (masterObjectList[i].r == id) return masterObjectList[i];
+		}
+		if (colour=='g') {
+			for (var i in masterObjectList) if (masterObjectList[i].g == id) return masterObjectList[i];
+		}
+		if (colour=='b') {
+			for (var i in masterObjectList) if (masterObjectList[i].b == id) return masterObjectList[i];
+		}
+		
+	}
+	
+	function switchBaseImage(colour) {
+		imageFile = runName + "_" + colour + ".png";
+		baseImage = colour;
+		baseCatalog = allObjects[colour];
+		writeToCommandWindow('Switching to ' + colourDescriptions[colour] + ' base image.');
+		loadPNG(imageFile);
+		if (circles) drawCircles();
+		
 	}
 	
 	function loadPNG(filename) {
 		//load the image
 		var image = new Image();
 		image.src = filename;
-		image.onload = function () { context.drawImage(image, 0, 0);}
+		image.onload = function () { 
+			context.drawImage(image, 0, 0);
+			if (circles) drawCircles();
+			}
 	}
 	
 	function filterObjects(objectList) {
@@ -374,8 +436,8 @@ var circles = false;
 			drawCircles();
 			circles = true;
 		} else {
-			undrawCircles();
 			circles = false;
+			undrawCircles();
 		}
 	}
 	
@@ -386,17 +448,18 @@ var circles = false;
 	
 	function drawCircles() {
 		console.log("Drawing circles");
-      		context.lineWidth = 3;
+      		context.lineWidth = 2;
       		context.strokeStyle = '#003300';
-      		objects = redObjectList;
+      		objects = allObjects[baseImage];
 		for (i in objects) {
 			x = objects[i].x
 			y = height - objects[i].y
-			console.log(x, y)
+			//console.log(x, y)
 			context.beginPath();
 	      		context.arc(x, y, 15, 0, 2 * Math.PI, false);
 	      		context.stroke();
 		}
+		context.closePath();
 		
 	}
 	
@@ -493,7 +556,21 @@ var circles = false;
         chart.draw(dataTable, options);
 	}
 
+function writeToCommandWindow(text) {
+	if (commandWindowText.length > commandWindowHistory) {
+		commandWindowText.shift();
+	}
+	
+	commandWindowText.push(String(text));
+	
+	commandWindowHTML = "";
+	for (var i in commandWindowText) {
+		commandWindowHTML+= commandWindowText[i] + "<br/>";
+	}
+	
+	$('#commandWindow').html(commandWindowHTML);
 
+}
 
 function debug(debugString) {
 	if (debugText.length>debugHistory) {
