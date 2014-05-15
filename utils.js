@@ -2,41 +2,6 @@ var debugText = [];
 var debugHistory = 15;
 
 
-function wcsSolution() {
-		this.equinox = 0;	
-}
-	
-wcsSolution.prototype.init = function(data){
-	this.equinox = data.equinox;
-	this.x_ref = data.x_ref;
-	this.y_ref = data.y_ref;
-	this.ra = data.ra;
-	this.dec = data.dec;
-	this.CD_1_1 = data.CD_1_1;
-	this.CD_1_2 = data.CD_1_2;
-	this.CD_2_1 = data.CD_2_1;
-	this.CD_2_2 = data.CD_2_2;
-}
-
-wcsSolution.prototype.toString = function(){
-	outStr = "RA: " + this.ra + " DEC: " + this.dec;
-	return outStr;
-}
-	
-wcsSolution.prototype.pixelToWorld = function(x, y) {
-	abs_x = x - this.x_ref;
-	abs_y = y - this.y_ref;
-	world_x = this.CD_1_1 * abs_x + this.CD_1_2 * abs_y;
-	world_y = this.CD_2_1 * abs_x + this.CD_2_2 * abs_y;
-	world_x = world_x + this.ra
-	world_y = world_y + this.dec
-	worldCoord = {wx: world_x, wy: world_y}
-		
-	return worldCoord;
-}
-	
-	
-	
 	
 function degToSexString(angle) {
 		degrees = Math.floor(angle);

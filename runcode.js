@@ -1,5 +1,3 @@
-var debugText = [];
-var debugHistory = 15;
 var commandWindowText = [];
 var commandWindowHistory = 5;
 
@@ -25,7 +23,7 @@ var selectedObject;
 var width, height;	
 var context;
 var circles = false;
-var baseImage = 'r';
+var baseColour = 'r';
 
 	function wcsSolution() {
 		this.equinox = 0;	
@@ -71,7 +69,7 @@ var baseImage = 'r';
 		rJSONFile = runName + "_r.json";
 		gJSONFile = runName + "_g.json";
 		bJSONFile = runName + "_b.json";
-		imageFile = runName + "_" + baseImage + ".png";
+		imageFile = runName + "_" + baseColour + ".png";
 		wcsSolutionFile = runName + "_r_wcs.json"
 		
 		$.getJSON(wcsSolutionFile, wcsLoaded);
@@ -385,7 +383,7 @@ var baseImage = 'r';
 		 	oy = baseCatalog[i].y;
 			if (distance(x, y, ox, oy)<15) objectReference = baseCatalog[i]
 			}
-		if (objectReference!=0) object = lookupMasterObject(objectReference.id, baseImage);
+		if (objectReference!=0) object = lookupMasterObject(objectReference.id, baseColour);
 		return object
 	}
 	
@@ -404,7 +402,7 @@ var baseImage = 'r';
 	
 	function switchBaseImage(colour) {
 		imageFile = runName + "_" + colour + ".png";
-		baseImage = colour;
+		baseColour = colour;
 		baseCatalog = allObjects[colour];
 		writeToCommandWindow('Switching to ' + colourDescriptions[colour] + ' base image.');
 		loadPNG(imageFile);
@@ -449,7 +447,7 @@ var baseImage = 'r';
 		console.log("Drawing circles");
       		context.lineWidth = 2;
       		context.strokeStyle = '#003300';
-      		objects = allObjects[baseImage];
+      		objects = baseCatalog;
 		for (i in objects) {
 			x = objects[i].x
 			y = height - objects[i].y
@@ -570,46 +568,4 @@ function writeToCommandWindow(text) {
 	$('#commandWindow').html(commandWindowHTML);
 
 }
-
-function debug(debugString) {
-	if (debugText.length>debugHistory) {
-		debugText.shift();
-	}
-	
-	dateString = formatTime(new Date());
-	
-	debugText.push(String(dateString + " : " + debugString));
-	
-	debugHTML = "";
-	for (i in debugText) {
-		debugHTML+= debugText[i] + "<br/>";		
-	}
-	
-	$('#debugPanel').html(debugHTML);
-}
-
-function formatTime(date) {
-	var hours;
-	var minutes;
-	var seconds;
-	var millis;
-	var timeString;
-	
-	hours = date.getHours();
- 	minutes = date.getMinutes();
-	seconds = date.getSeconds();
-	millis = date.getMilliseconds();
-	
-	if (hours<10) hours = "0" + hours;
-	if (seconds<10) seconds = "0" + seconds;
-	if (minutes<10) minutes = "0" + minutes;
-	if (millis<100) millis = "0" + millis;
-	if (millis<10) millis = "0" + millis;
-	
-	timeString = hours + ":" + minutes + ":" + seconds + "." + millis;
-	return timeString;
-}
-
-function zfill(num, len) {
-	return (Array(len).join("0") + num).slice(-len);}
 
