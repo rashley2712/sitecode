@@ -408,7 +408,6 @@ var baseImage = 'r';
 		baseCatalog = allObjects[colour];
 		writeToCommandWindow('Switching to ' + colourDescriptions[colour] + ' base image.');
 		loadPNG(imageFile);
-		if (circles) drawCircles();
 		
 	}
 	
