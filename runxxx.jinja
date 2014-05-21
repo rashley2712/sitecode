@@ -29,16 +29,18 @@
 		<th>Date</th>
 		<th>Run</th>
 		<th>Object</th>
+		<th>RA, DEC</th>
 		<th>Run duration</th>
 		<th>Comments</th>
 		<th>Status</th>
 	</tr>
 	<tr>
-		<td>{{ date }}</td>
-		<td>{{ runName }}</td>
-		<td>{{ object }}</td>
-		<td>{{ duration }}</td>
-		<td>{{ comments }}</td>
+		<td id="date">{{ date }}</td>
+		<td id="runName">{{ runName }}</td>
+		<td id="object">{{ object }}</td>
+		<td id="radec"></td>
+		<td id="duration">{{ duration }}</td>
+		<td id="comments">{{ comments }}</td>
 		<td><span id='rStatus' class="statusNotOK">R</span><span id="gStatus" class="statusNotOK">G</span><span id="bStatus" class="statusNotOK">B</span></td>
 	</tr>
 	

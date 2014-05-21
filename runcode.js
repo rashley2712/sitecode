@@ -8,8 +8,10 @@ var commandHelpHTML = "Available commands: <br/>\
 					<b>l</b> - show object labels (IDs). <br/>\
 					<b>r</b> - switch base image to 'red'. <br/>\
 					<b>g</b> - switch base image to 'green'.<br/>\
-					<b>b</b> - switch base image to 'blue'.<br/>"
+					<b>b</b> - switch base image to 'blue'.<br/>\
+					"
 
+var runInfo = {};
 var masterObjectList = new Array();
 var redObjectList = new Array();
 var greenObjectList = new Array();
@@ -19,6 +21,8 @@ var baseCatalog = [];
 var filteredObjectList = new Array();
 var loadedMaster = false, loadedGreen = false, loadedRed = false, loadedBlue = false;
 var loadedWCS = false;
+var loadedRunInfo = false;
+	
 var selectedObject;
 var width, height;	
 var context;
@@ -70,10 +74,21 @@ var baseColour = 'r';
 		gJSONFile = runName + "_g.json";
 		bJSONFile = runName + "_b.json";
 		imageFile = runName + "_" + baseColour + ".png";
-		wcsSolutionFile = runName + "_r_wcs.json"
+		wcsSolutionFile = runName + "_r_wcs.json";
+		runInfoJSONFile = runName + "_info.json";
 		
 		$.getJSON(wcsSolutionFile, wcsLoaded);
+
 		$.getJSON(rgbJSONFile, jsonLoadedRGB);
+
+		$.getJSON(runInfoJSONFile, function(data) {
+					runInfo = data;
+					console.log(runInfo);
+					loadedRunInfo = true;
+					updateRunInfoTable(runInfo);
+					checkAllDataLoaded();
+				});
+
 		$.getJSON(rJSONFile, function (data) {
 			console.log("got the data for the red channel");
 			loadedRed = parseObjectData(data, redObjectList, "#rStatus");
@@ -97,6 +112,19 @@ var baseColour = 'r';
 		loadPNG(imageFile);
 		document.onkeydown = handleKeyPressed;
 	}
+	
+	function updateRunInfoTable(runInfo) {
+		$('#date').text(runInfo.data);
+		$('#runName').text(runInfo.runID);
+		$('#comments').text(runInfo.comment);
+		$('#runName').text(runInfo.runID);
+		$('#object').html(runInfo.objectID + "<br/>" + runInfo.target);
+		raString = degToSexString(runInfo.ra);
+		decString = degToSexString(runInfo.dec);
+		radecString = "&alpha;:" + raString + " &delta;:" + decString;
+		$('#radec').html(radecString);
+	}
+	
 	
 	function wcsLoaded(data) {
 		console.log("Loaded the WCS data");
@@ -130,6 +158,7 @@ var baseColour = 'r';
 		if (!loadedRed) return;
 		if (!loadedGreen) return;
 		if (!loadedBlue) return;
+		if (!loadedRunInfo) return;
 		
 		debug("All data successfully loaded");
 		console.log("All data successfully loaded.");
