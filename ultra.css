@@ -154,6 +154,26 @@ a:hover {
     font-size: 11pt;
 }
 
+/* Additions from Richard Ashley */
+.debugstyle {
+	background-color: lightgray;
+	border: 1px solid #777;
+	font-size: 10px;
+	font-family: arial;
+	color: black;
+	padding: 4px 0;
+	text-align: left;
+  	}
+
+.statusOK {
+	color: green;
+}
+
+.statusNotOK {
+	color: red;
+}
+
+
 
 
 

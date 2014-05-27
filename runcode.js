@@ -2,6 +2,7 @@ var commandWindowText = [];
 var commandWindowHistory = 5;
 
 var colourDescriptions = { 'r': 'red', 'g': 'green', 'b':'blue' };
+var colours = ['r', 'g', 'b'];
 
 var commandHelpHTML = "Available commands: <br/>\
 					<b>c</b> - show object 'circles'. <br/>\
@@ -12,17 +13,13 @@ var commandHelpHTML = "Available commands: <br/>\
 					"
 
 var runInfo = {};
-var masterObjectList = new Array();
-var redObjectList = new Array();
-var greenObjectList = new Array();
-var blueObjectList = new Array();
-var allObjects = {};
-var baseCatalog = [];
-var filteredObjectList = new Array();
-var loadedMaster = false, loadedGreen = false, loadedRed = false, loadedBlue = false;
+var objectList = new Array();		 
+var frameList = new Array();
 var loadedWCS = false;
 var loadedRunInfo = false;
-	
+var loadedObjectInfo = false;
+var loadedFrameInfo = false;
+
 var selectedObject;
 var width, height;	
 var context;
@@ -69,52 +66,106 @@ var baseColour = 'r';
 		debug("Loading the JSON data");
 		writeToCommandWindow("Run: " + runName);
 		writeToCommandWindow("Loading the object data... please wait...");
-		rgbJSONFile = runName + "_rgb.json";
-		rJSONFile = runName + "_r.json";
-		gJSONFile = runName + "_g.json";
-		bJSONFile = runName + "_b.json";
 		imageFile = runName + "_" + baseColour + ".png";
 		wcsSolutionFile = runName + "_r_wcs.json";
 		runInfoJSONFile = runName + "_info.json";
+		objectJSONFile = runName + "_objects.json";
+		frameJSONFile = runName + "_frameInfo.json";
 		
 		$.getJSON(wcsSolutionFile, wcsLoaded);
 
-		$.getJSON(rgbJSONFile, jsonLoadedRGB);
-
 		$.getJSON(runInfoJSONFile, function(data) {
 					runInfo = data;
+					console.log("Run info:");
 					console.log(runInfo);
 					loadedRunInfo = true;
-					updateRunInfoTable(runInfo);
+					updateRunInfoTable();
 					checkAllDataLoaded();
 				});
 
-		$.getJSON(rJSONFile, function (data) {
-			console.log("got the data for the red channel");
-			loadedRed = parseObjectData(data, redObjectList, "#rStatus");
-			allObjects['r'] = redObjectList;
-			checkAllDataLoaded();
-			});
-		$.getJSON(gJSONFile, function (data) {
-			console.log("got the data for the green channel");
-			loadedGreen = parseObjectData(data, greenObjectList, "#gStatus");
-			allObjects['g'] = greenObjectList;
-			checkAllDataLoaded();
-			});
-		$.getJSON(bJSONFile, function (data) {
-			console.log("got the data for the blue channel");
-			loadedBlue = parseObjectData(data, blueObjectList, "#bStatus");
-			allObjects['b'] = blueObjectList;
-			checkAllDataLoaded();
-			});
+		$.getJSON(objectJSONFile, parseLoadedObjects);
+		//loadJSON(objectJSONFile, parseLoadedObjects);
+		$.getJSON(frameJSONFile, parseFrameData);
+		
 		initCanvas();
 		clearCanvas();
 		loadPNG(imageFile);
 		document.onkeydown = handleKeyPressed;
 	}
 	
-	function updateRunInfoTable(runInfo) {
-		$('#date').text(runInfo.data);
+	function loadJSON(path, callback) {   
+		var xobj = new XMLHttpRequest();
+        xobj.overrideMimeType("application/json");
+		xobj.open('GET', path, true); // Replace 'my_data' with the path to your file
+		console.log(xobj);
+		xobj.onreadystatechange = function () {
+			if (xobj.readyState == 4 && xobj.status == "200") {
+				// Required use of an anonymous callback as .open will NOT return a value but simply returns undefined in asynchronous mode
+				callback(xobj.responseText);
+			}
+		};
+		xobj.send(null);  
+		}
+	
+	function parseLoadedObjects(data) {
+		console.log("About to parse objects");
+		// Reset the objectList
+		objectList = []
+		
+		for (var i in data) {
+			dataObject = JSON.parse(data[i]);
+			//console.log(dataObject);
+			dictObject = {};
+			dictObject.id = dataObject.id;
+			dictObject.isComparison = dataObject.isComparison;
+			dictObject.meanPosition = {'r': [dataObject.meanPosition['r'][0], dataObject.meanPosition['r'][1]], 
+				                       'g': [dataObject.meanPosition['g'][0], dataObject.meanPosition['g'][1]],
+				                       'b': [dataObject.meanPosition['b'][0], dataObject.meanPosition['b'][1]]};
+			dictObject.colourID = {'r': dataObject.colourID['r'], 'g': dataObject.colourID['g'], 'b': dataObject.colourID['b'] }
+			dictObject.photometry = {'r': [], 'g':[], 'b':[] };
+			for (c in colours) {
+				photoData = dataObject.photometry[colours[c]];
+				//console.log(photoData);
+				for (m in photoData) {
+					position = [ photoData[m][3], photoData[m][4] ];
+					exposure = {'frameIndex': photoData[m][0], 
+						        'magnitude' : photoData[m][1], 
+						        'fwhm'      : photoData[m][2],
+						        'position'  : position};
+						        
+					dictObject.photometry[colours[c]].push(exposure);
+				}
+			}
+			objectList.push(dictObject);
+			//console.log(dictObject);
+		}
+
+		console.log(objectList.length + " objects loaded");
+
+		loadedObjectInfo = true;
+		checkAllDataLoaded();
+	
+	}
+
+	function parseFrameData(data) {
+		// Reset the frameList
+		frameList = [];
+		
+		for (var i in data) {
+			dataObject = JSON.parse(data[i]);
+			frameList.push(dataObject);
+		}
+		console.log("Frame info:");
+		console.log(frameList.length + " frames");
+
+		loadedFrameInfo = true;
+		checkAllDataLoaded();
+		
+	}
+
+	
+	function updateRunInfoTable() {
+		$('#date').text(runInfo.date);
 		$('#runName').text(runInfo.runID);
 		$('#comments').text(runInfo.comment);
 		$('#runName').text(runInfo.runID);
@@ -129,18 +180,10 @@ var baseColour = 'r';
 	
 	
 	function wcsLoaded(data) {
-		console.log("Loaded the WCS data");
+		console.log("WCS data:");
 		console.log(data);
 		wcsSolutionRed = new wcsSolution();
-		
 		wcsSolutionRed.init(data);
-		
-		console.log("WCS loaded: Equinox is: "+ wcsSolutionRed.equinox);
-		
-		debug("WCS solution: " + wcsSolutionRed.toString());
-
-		console.log("Trial world: ");
-		console.log(wcsSolutionRed.pixelToWorld(500,500));
 		loadedWCS = true;
 	}
 	
@@ -156,35 +199,16 @@ var baseColour = 'r';
 	}
 	
 	function checkAllDataLoaded() {
-		if (!loadedMaster) return;
-		if (!loadedRed) return;
-		if (!loadedGreen) return;
-		if (!loadedBlue) return;
 		if (!loadedRunInfo) return;
+		if (!loadedObjectInfo) return;
+		if (!loadedFrameInfo) return;
 		
 		debug("All data successfully loaded");
 		console.log("All data successfully loaded.");
-		writeToCommandWindow("Data loaded.");
+		writeToCommandWindow("All data loaded.");
 		writeToCommandWindow("Press 'h' for a list of commands.");
 		
-		baseCatalog = allObjects['r'];
-		console.log("Set the base catalog to 'r'");
-		
-		// Get the x,y position from the red channel
-		console.log(masterObjectList.length)
-		for (var i=0; i<masterObjectList.length; i++) {
-			masterObject = masterObjectList[i]
-			object = getObjectById(redObjectList, masterObject.r);
-			if (object!=null) {
-				masterObjectList[i].x = object.x; 
-				masterObjectList[i].y = object.y;
-			} else {
-				masterObjectList[i].x = 0;
-				masterObjectList[i].y = 0;
-			}  
-		}
-		drawObjectTable();
-		//toggleCircles();
+		//drawObjectTable();
 	}
 	
 	function handleKeyPressed(e) {
@@ -210,21 +234,6 @@ var baseColour = 'r';
 		}
 	}
 		
-	function listObjects() {
-		for (var i in masterObjectList) {
-			object = masterObjectList[i]
-			console.log(object.id + " (" + object.x + ", " + object.y +") frames: " + object.data.length + " last counts: " + object.data[object.data.length-1][1])
-		}
-	}
-	
-	function getObjectById(objects, id) {
-		for (var i in objects) {
-			if (objects[i].id == id) return objects[i]
-		}
-		
-		return null
-	}
-	
 	function objectTable(objectList) {
 		tableString = "<table>";
 		
@@ -233,36 +242,34 @@ var baseColour = 'r';
 			tableString+= "<tr>";
 			object = objectList[i]
 			tableString+= "<td>" + object.id;
-			tableString+=" (" + parseInt(object.x) + ", " + parseInt(object.y)  + ")";
 			tableString+= "</td>";
-			if (object.r!=-1) {
-				redObject = getObjectById(redObjectList, object.r);
+			console.log(object);
+			
+			if (object.colourID.r!=-1) {
 				tableString+="<td><table>";
 				tableString+="<tr>";
-				tableString+="<td>(" + parseInt(redObject.x) + ", " + parseInt(redObject.y) + ")</td>";
-				tableString+="<td>[" + redObject.data.length +  "]</td>";
+				tableString+="<td>(" + parseInt(object.meanPosition.r[0]) + ", " + parseInt(object.meanPosition.r[1]) + ")</td>";
+				tableString+="<td>[" + object.photometry.r.length +  "]</td>";
 				tableString+="</tr>";				
 				tableString+="</table></td>";				
 			} else {
 				tableString+="<td>none</td>"
 			}
-			if (object.g!=-1) {
-				greenObject = getObjectById(greenObjectList, object.g);
+			if (object.colourID.g!=-1) {
 				tableString+="<td><table>";
 				tableString+="<tr>";
-				tableString+="<td>(" + parseInt(greenObject.x) + ", " + parseInt(greenObject.y)  + ")</td>";
-				tableString+="<td>[" + greenObject.data.length +  "]</td>";
+				tableString+="<td>(" + parseInt(object.meanPosition.g[0]) + ", " + parseInt(object.meanPosition.g[1])  + ")</td>";
+				tableString+="<td>[" + object.photometry.g.length +  "]</td>";
 				tableString+="</tr>";				
 				tableString+="</table></td>";				
 			} else {
 				tableString+="<td>none</td>"
 			}
-			if (object.b!=-1) {
-				blueObject = getObjectById(blueObjectList, object.b);
+			if (object.colourID.b!=-1) {
 				tableString+="<td><table>";
 				tableString+="<tr>";
-				tableString+="<td>(" + parseInt(blueObject.x) + ", " + parseInt(blueObject.y)  + ")</td>";
-				tableString+="<td>[" + blueObject.data.length +  "]</td>";
+				tableString+="<td>(" + parseInt(object.meanPosition.b[0]) + ", " + parseInt(object.meanPosition.b[1])  + ")</td>";
+				tableString+="<td>[" + object.photometry.b.length +  "]</td>";
 				tableString+="</tr>";				
 				tableString+="</table></td>";				
 			} else {
@@ -277,28 +284,10 @@ var baseColour = 'r';
 	}
 	
 	function drawObjectTable() {
-		htmlString =  objectTable(masterObjectList);
+		htmlString =  objectTable(objectList);
 		$('#ObjectTable').html(htmlString);
 	}
 	
-	function jsonLoadedRGB(data) {
-		numberObjects = data.length;
-		debug(numberObjects + " colour objects loaded");
-		masterObjectList = [];
-		for (var i in data) {
-			dataLine = data[i]
-			dataObject = JSON.parse(dataLine);		
-			masterObjectList.push(dataObject);
-			}
-		loadedMaster = true;
-		checkAllDataLoaded();
-		console.log(masterObjectList.length + " objects parsed.");
-		for (var i in masterObjectList) {
-			console.log(i);
-			console.log(masterObjectList[i]);
-		}
-	}
-
 	function parseObjectData(data, objectList, statusAttribute) {
 		numberObjects = data.length;
 		debug(numberObjects + " objects loaded " + statusAttribute);
@@ -347,9 +336,10 @@ var baseColour = 'r';
 			y = height - evt.layerY;
 		}
 		currentObject = getObjectUnderMouseCursor(x, y)
-		console.log(currentObject);
-		if (currentObject!=0) {
-			updateSelectedObject(currentObject)
+		if (currentObject!=null) {
+			console.log(currentObject);
+			updateSelectedObject(currentObject);
+			drawChart(currentObject);
 		}
 	}
 	
@@ -365,7 +355,7 @@ var baseColour = 'r';
 		
 		cursorString = " (" + x + ", " + y + ")";
 		currentObject = getObjectUnderMouseCursor(x, y);
-		if (currentObject!=0) cursorString+= " [" + currentObject.id + "]";
+		//if (currentObject!=null) cursorString+= " [" + currentObject.id + "]";
 		$('#MouseLocation').text(cursorString);
 
 		if (loadedWCS) {
@@ -383,7 +373,7 @@ var baseColour = 'r';
 		} else  {
 			$('#HoverText').html(cursorString);
 		}
-		if (currentObject!=0) {
+		if (currentObject!=null) {
 			$('#HoverText').css('background-color', 'green');
 		} else {
 			$('#HoverText').css('background-color', '#000000');
@@ -396,25 +386,41 @@ var baseColour = 'r';
 	}
 	
 	function updateSelectedObject(object) {
-		selectedObject = object;
+		colours = ['r', 'g', 'b'];
 		tableHTML = "<table>";
-		tableHTML+= "<tr><td>" + selectedObject.id + "</td><td>(" + parseInt(selectedObject.x) + ", " + parseInt(selectedObject.y) + ")</td></tr>";
+		tableHTML+= "<tr><th>ID</th><th>Position</th><th>Data points</th></tr>";
+
+		tableHTML+= "<tr><td>" + object.id + "</td>"
+
+		tableHTML+= "<td>";
+		for (var i in colours) {
+			if (object.colourID[colours[i]] != -1)
+				tableHTML+= colours[i] + "(" + parseInt(object.meanPosition[colours[i]][0]) + ", " + parseInt(object.meanPosition[colours[i]][1]) + ")<br/>";
+		}
+		tableHTML+= "</td>";
+
+		tableHTML+= "<td>";
+		for (var i in colours) {
+			if (object.colourID[colours[i]] != -1)
+				tableHTML+= colours[i] + " : " + object.photometry[colours[i]].length + "<br/>";
+		}
+		tableHTML+= "</td>";
+
+		tableHTML+= "</tr>";
 		tableHTML+= "</table>";
 		$('#SelectedObjectTable').html(tableHTML);
-		drawChartR();
-		drawChartG();
-		drawChartB();
+
 	}
 	
 	function getObjectUnderMouseCursor(x, y) {
-		object = 0;
-		objectReference = 0;
-		for (i in baseCatalog) {
-		 	ox = baseCatalog[i].x;
-		 	oy = baseCatalog[i].y;
-			if (distance(x, y, ox, oy)<15) objectReference = baseCatalog[i]
+		object = null;
+		for (i in objectList) {
+			if (objectList[i].colourID[baseColour]!=-1) {
+				ox = objectList[i].meanPosition[baseColour][0];
+				oy = objectList[i].meanPosition[baseColour][1];
+				if (distance(x, y, ox, oy)<15) object = objectList[i]
 			}
-		if (objectReference!=0) object = lookupMasterObject(objectReference.id, baseColour);
+		}
 		return object
 	}
 	
@@ -434,7 +440,6 @@ var baseColour = 'r';
 	function switchBaseImage(colour) {
 		imageFile = runName + "_" + colour + ".png";
 		baseColour = colour;
-		baseCatalog = allObjects[colour];
 		writeToCommandWindow('Switching to ' + colourDescriptions[colour] + ' base image.');
 		loadPNG(imageFile);
 		
@@ -475,21 +480,94 @@ var baseColour = 'r';
 	}			
 	
 	function drawCircles() {
-		console.log("Drawing circles");
-      		context.lineWidth = 2;
-      		context.strokeStyle = '#003300';
-      		objects = baseCatalog;
-		for (i in objects) {
-			x = objects[i].x
-			y = height - objects[i].y
-			//console.log(x, y)
-			context.beginPath();
-	      		context.arc(x, y, 15, 0, 2 * Math.PI, false);
-	      		context.stroke();
+      	context.lineWidth = 2;
+      	context.strokeStyle = '#003300';
+		for (i in objectList) {
+			object = objectList[i];
+			if (object.colourID[baseColour]!=-1) {
+				meanPosition = object.meanPosition[baseColour];
+				x = meanPosition[0];
+				y = height - meanPosition[1];
+				context.beginPath();
+		      		context.arc(x, y, 15, 0, 2 * Math.PI, false);
+		      		context.stroke();
+				}
 		}
 		context.closePath();
 		
 	}
+
+
+	function drawChart(object) {
+		console.log("Drawing the chart of....");
+		console.log(object);
+		
+		rData = object.photometry['r'];
+		
+		var numColumns = 0;
+		var coloursForChart = [];
+		for (i in colours) {
+			if (object.colourID[colours[i]]!=-1) {
+				numColumns++;
+				coloursForChart.push(colours[i]);
+			}
+		}
+		
+		console.log(coloursForChart);
+		
+		headings = ["MJD"];
+		for (i in coloursForChart) headings.push(colourDescriptions[coloursForChart[i]])
+		
+		chartData = [];
+		chartData.length = 0; 
+		
+		chartData.push(headings);
+		
+		console.log("Headings");
+		console.log(headings);
+		console.log(chartData);
+		console.log("That was the chart data");
+		
+		// Put the frame data into the data array
+		for (var i in frameList) {
+			MJD = frameList[i].MJD;
+			temp = [ MJD ];
+			for (var j in coloursForChart) {
+				temp.push(null);
+			}
+			chartData.push(temp);
+		}
+		
+		for (var i in coloursForChart) {
+			colour = coloursForChart[i];
+			data = object.photometry[colour];
+			colourIndex = parseInt(i) + 1;
+			for (var j=0; j< data.length; j++) {
+				//console.log(data[j]);
+				frameIndex = parseInt(data[j].frameIndex);
+				chartData[frameIndex][colourIndex] = data[j].magnitude;
+			}
+		}
+		
+		
+		//console.log(chartData);
+		
+		// Reveal the chart area...
+		$('#main_chart_div').css('height', '400px');
+		
+		var dataTable = google.visualization.arrayToDataTable(chartData);
+
+        var options = {
+			title: 'Photometry for Object: ' + object.id,
+			colors: ['red', 'green', 'blue'], 
+			pointSize: 1
+        	}
+
+        var chart = new google.visualization.ScatterChart(document.getElementById('main_chart_div'));
+        chart.draw(dataTable, options);
+
+	}
+
 	
 	function drawChartR() {
 		var dataArray = [['MJD', 'Counts']];
