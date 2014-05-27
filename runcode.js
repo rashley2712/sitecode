@@ -424,19 +424,6 @@ var baseColour = 'r';
 		return object
 	}
 	
-	function lookupMasterObject(id, colour) {
-		if (colour=='r') {
-			for (var i in masterObjectList) if (masterObjectList[i].r == id) return masterObjectList[i];
-		}
-		if (colour=='g') {
-			for (var i in masterObjectList) if (masterObjectList[i].g == id) return masterObjectList[i];
-		}
-		if (colour=='b') {
-			for (var i in masterObjectList) if (masterObjectList[i].b == id) return masterObjectList[i];
-		}
-		
-	}
-	
 	function switchBaseImage(colour) {
 		imageFile = runName + "_" + colour + ".png";
 		baseColour = colour;
@@ -557,9 +544,14 @@ var baseColour = 'r';
 		
 		var dataTable = google.visualization.arrayToDataTable(chartData);
 
+		var chartColours = [];
+		for (var c in coloursForChart) {
+			chartColours.push(colourDescriptions[coloursForChart[c]]);
+		}
+
         var options = {
 			title: 'Photometry for Object: ' + object.id,
-			colors: ['red', 'green', 'blue'], 
+			colors: chartColours, 
 			pointSize: 1
         	}
 
