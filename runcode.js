@@ -3,6 +3,9 @@ var commandWindowHistory = 5;
 
 var colourDescriptions = { 'r': 'red', 'g': 'green', 'b':'blue' };
 var colours = ['r', 'g', 'b'];
+var comparisonCircleColour = "#6EF5AF";
+var variableCircleColour = "#C200DB";
+var otherCircleColour = "#003300";
 
 var commandHelpHTML = "Available commands: <br/>\
 					<b>c</b> - show object 'circles'. <br/>\
@@ -117,7 +120,7 @@ var baseColour = 'r';
 			//console.log(dataObject);
 			dictObject = {};
 			dictObject.id = dataObject.id;
-			dictObject.isComparison = dataObject.isComparison;
+			dictObject.comparisonFlags = dataObject.comparisonFlags;
 			dictObject.meanPosition = {'r': [dataObject.meanPosition['r'][0], dataObject.meanPosition['r'][1]], 
 				                       'g': [dataObject.meanPosition['g'][0], dataObject.meanPosition['g'][1]],
 				                       'b': [dataObject.meanPosition['b'][0], dataObject.meanPosition['b'][1]]};
@@ -468,20 +471,29 @@ var baseColour = 'r';
 	
 	function drawCircles() {
       	context.lineWidth = 2;
-      	context.strokeStyle = '#003300';
+      	context.strokeStyle = otherCircleColour;
 		for (i in objectList) {
 			object = objectList[i];
 			if (object.colourID[baseColour]!=-1) {
 				meanPosition = object.meanPosition[baseColour];
+				isComparison = object.comparisonFlags[baseColour];
+				console.log('ID:' + object.id + ' is comparison:' + isComparison);
 				x = meanPosition[0];
 				y = height - meanPosition[1];
 				context.beginPath();
-		      		context.arc(x, y, 15, 0, 2 * Math.PI, false);
-		      		context.stroke();
+				if (isComparison) {
+					console.log("Switching colour to:" + comparisonCircleColour);
+					context.strokeStyle = comparisonCircleColour;
+					}
+				 else {
+					context.strokeStyle = otherCircleColour;
+				}
+		      	context.arc(x, y, 15, 0, 2 * Math.PI, false);
+				context.stroke();
+		      	context.closePath();
 				}
 		}
-		context.closePath();
-		
+		      	
 	}
 
 
@@ -560,99 +572,6 @@ var baseColour = 'r';
 
 	}
 
-	
-	function drawChartR() {
-		var dataArray = [['MJD', 'Counts']];
-		// Do the red channel
-		if (selectedObject.r!=-1) {
-			// Reveal the chart area
-			$('#chart_div_r').css('height', '400px');
-			object = getObjectById(redObjectList, selectedObject.r);
-			for (i=0; i<object.data.length; i++) {
-				//console.log("MJD: " + redObject.data[i][0] + " Counts:" + redObject.data[i][1]);
-				if (object.data[i][0]!=51544) {
-					temp = [object.data[i][0], object.data[i][1]];
-					dataArray.push(temp);
-				}
-			}
-		} else {
-			// Hide the chart area
-			$('#chart_div_r').css('height', '0px');
-			$('#chart_div_r').empty();
-			return;
-		}
-	        	
-		var dataTable = google.visualization.arrayToDataTable(dataArray);
-
-        var options = {
-			title: 'Counts for Object: ' + selectedObject.id,
-			colors: ['red', 'green', 'blue']
-        	}
-
-        var chart = new google.visualization.LineChart(document.getElementById('chart_div_r'));
-        chart.draw(dataTable, options);
-	}
-
-	function drawChartG() {
-		var dataArray = [['MJD', 'Counts']];
-		// Do the green channel
-		if (selectedObject.g!=-1) {
-			// Reveal the chart area
-			$('#chart_div_g').css('height', '400px');
-			object = getObjectById(greenObjectList, selectedObject.g);
-			for (i=0; i<object.data.length; i++) {
-				if (object.data[i][0]!=51544) {
-					temp = [object.data[i][0], object.data[i][1]];
-					dataArray.push(temp);
-				}
-			}
-		} else {
-			// Hide the chart area
-			$('#chart_div_g').css('height', '0px');
-			$('#chart_div_g').empty();
-			return;
-		}
-	        	
-		var dataTable = google.visualization.arrayToDataTable(dataArray);
-
-        var options = {
-			title: 'Counts for Object: ' + selectedObject.id,
-			colors: ['green']
-        	}
-
-        var chart = new google.visualization.LineChart(document.getElementById('chart_div_g'));
-        chart.draw(dataTable, options);
-	}
-
-	function drawChartB() {
-		var dataArray = [['MJD', 'Counts']];
-		// Do the blue channel
-		if (selectedObject.b!=-1) {
-			// Reveal the chart area
-			$('#chart_div_b').css('height', '400px');
-			object = getObjectById(blueObjectList, selectedObject.b);
-			for (i=0; i<object.data.length; i++) {
-				if (object.data[i][0]!=51544) {
-					temp = [object.data[i][0], object.data[i][1]];
-					dataArray.push(temp);
-				}
-			}
-		} else {
-			// Hide the chart area
-			$('#chart_div_b').css('height', '0px');
-			$('#chart_div_b').empty();
-			return;
-		}
-	        	
-		var dataTable = google.visualization.arrayToDataTable(dataArray);
-
-        var options = {
-			title: 'Counts for Object: ' + selectedObject.id + ' blueID: ' + selectedObject.b,
-			colors: ['blue']
-        	}
-        var chart = new google.visualization.LineChart(document.getElementById('chart_div_b'));
-        chart.draw(dataTable, options);
-	}
 
 function writeToCommandWindow(text) {
 	if (commandWindowText.length > commandWindowHistory) {
