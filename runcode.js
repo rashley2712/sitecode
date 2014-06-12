@@ -23,10 +23,10 @@ var loadedRunInfo = false;
 var loadedObjectInfo = false;
 var loadedFrameInfo = false;
 
-var selectedObject;
+var selectedObject, comparisonObject;
 var width, height;	
 var context;
-var circles = false;
+var circles = false, labels=false, comparisonActive = false;
 var baseColour = 'r';
 
 	function wcsSolution() {
@@ -93,7 +93,7 @@ var baseColour = 'r';
 		
 		initCanvas();
 		clearCanvas();
-		loadPNG(imageFile);
+		loadPNG();
 		document.onkeydown = handleKeyPressed;
 	}
 	
@@ -235,6 +235,12 @@ var baseColour = 'r';
 			case 72: // 'h' pressed, show the help message
 				writeToCommandWindow(commandHelpHTML);
 				break;
+			case 76: // 'l' pressed.... render the object labels
+				toggleLabels();
+				break;
+			case 85: // 'u' pressed, use currently selected object as the comparison
+				switchComparison();
+				break;
 		}
 	}
 		
@@ -292,25 +298,6 @@ var baseColour = 'r';
 		$('#ObjectTable').html(htmlString);
 	}
 	
-	function parseObjectData(data, objectList, statusAttribute) {
-		numberObjects = data.length;
-		debug(numberObjects + " objects loaded " + statusAttribute);
-		if (objectList.length!=0) {
-			console.log("The objectList wasn't empty.... won't load new ones.");
-			return false;
-		}
-		for (i in data) {
-			dataLine = data[i]
-			dataObject = JSON.parse(dataLine);		
-			objectList.push(dataObject);
-			//console.log(dataObject);
-			}
-
-		$(statusAttribute).attr('class', 'statusOK');
-		
-		return true;
-	}
-
 	
 	function clearCanvas() {
 		// Clear the canvas area
@@ -320,13 +307,10 @@ var baseColour = 'r';
 	}
 	
 	function initCanvas() {
-		
 		theCanvas = document.getElementById("ImageCanvas");
 		context = theCanvas.getContext("2d");
-		
 		theCanvas.addEventListener('mousedown', mouseClicked);
 		theCanvas.addEventListener('mousemove', mouseMoved);
-		
 		width = theCanvas.width;
 		height = theCanvas.height;
 	}
@@ -339,11 +323,11 @@ var baseColour = 'r';
 			x = evt.layerX;
 			y = height - evt.layerY;
 		}
-		currentObject = getObjectUnderMouseCursor(x, y)
-		if (currentObject!=null) {
-			console.log(currentObject);
-			updateSelectedObject(currentObject);
-			drawChart(currentObject);
+		selectedObject = getObjectUnderMouseCursor(x, y)
+		if (selectedObject!=null) {
+			console.log(selectedObject);
+			updateSelectedObject(selectedObject, false);
+			drawChart(selectedObject);
 		}
 	}
 	
@@ -400,13 +384,12 @@ var baseColour = 'r';
 		// Write the text over the canvas object in the <div> called ChartStatus
 		$('#ChartStatus').html(message);
 		$('#ChartStatus').css('visibility', 'visible');
-		console.log("Displaying ChartStatus:", message);
-		
+		console.log("Displaying ChartStatus:", message);	
 	}
 	
 	function clearChartStatus() {
 		// Hide the floating status message
-		$('#StatusText').css('visibility', 'hidden');
+		$('#ChartStatus').css('visibility', 'hidden');
 	}
 	
 	
@@ -414,9 +397,11 @@ var baseColour = 'r';
 		return Math.sqrt( (x1-x2)*(x1-x2) + (y1-y2)*(y1-y2) )
 	}
 	
-	function updateSelectedObject(object) {
+	function updateSelectedObject(object, comparison) {
 		colours = ['r', 'g', 'b'];
 		tableHTML = "<table>";
+		if (!comparison) tableHTML+= "<tr><th colspan='3'>Selected</th></tr>";
+		  else tableHTML+= "<tr><th colspan='3'>Comparison</th></tr>";
 		tableHTML+= "<tr><th>ID</th><th>Position</th><th>Data points</th></tr>";
 
 		tableHTML+= "<tr><td>" + object.id + "</td>"
@@ -437,7 +422,8 @@ var baseColour = 'r';
 
 		tableHTML+= "</tr>";
 		tableHTML+= "</table>";
-		$('#SelectedObjectTable').html(tableHTML);
+		if (!comparison) $('#SelectedObjectTable').html(tableHTML);
+		  else $('#ComparisonObjectTable').html(tableHTML);
 
 	}
 	
@@ -454,20 +440,22 @@ var baseColour = 'r';
 	}
 	
 	function switchBaseImage(colour) {
-		imageFile = runName + "_" + colour + ".png";
 		baseColour = colour;
 		writeToCommandWindow('Switching to ' + colourDescriptions[colour] + ' base image.');
-		loadPNG(imageFile);
-		
+		redrawCanvas();
 	}
 	
-	function loadPNG(filename) {
+	function loadPNG() {
 		//load the image
+		filename = runName + "_" + baseColour + ".png";
 		var image = new Image();
 		image.src = filename;
+		console.log("Loading", imageFile);
 		image.onload = function () { 
 			context.drawImage(image, 0, 0);
 			if (circles) drawCircles();
+			if (labels) drawObjectLabels();
+			if (comparisonActive) drawDiamond(comparisonObject);
 			}
 	}
 	
@@ -486,14 +474,76 @@ var baseColour = 'r';
 			circles = true;
 		} else {
 			circles = false;
-			undrawCircles();
+			redrawCanvas();
+		}
+	}
+
+	function toggleLabels() {
+		if (!labels) {
+			drawObjectLabels();
+			labels = true;
+		} else {
+			labels = false;
+			redrawCanvas();
 		}
 	}
 	
-	function undrawCircles() {
+	function redrawCanvas() {
 		clearCanvas();
-		loadPNG(imageFile);
-	}			
+		loadPNG();
+	}	
+	
+	function switchComparison() {
+		if (comparisonActive) {
+			comparisonActive = false;
+			$('#ComparisonObjectTable').html("");
+			comparisonObject = null;
+			redrawCanvas();
+			return
+		}
+		if (selectedObject!=null) {
+			comparisonObject = selectedObject;
+			console.log("New comparison object", comparisonObject);
+			updateSelectedObject(comparisonObject, true);
+			computeComparisonData(comparisonObject);
+			drawDiamond(comparisonObject);
+			comparisonActive = true;
+		}
+	}
+			
+	function drawDiamond(object) {
+		r = 15;
+		if (object.colourID[baseColour]!=-1) {
+			meanPosition = object.meanPosition[baseColour];
+			x = meanPosition[0];
+			y = height - meanPosition[1];
+			context.lineWidth = 2;
+			context.strokeStyle = otherCircleColour;
+			context.beginPath();
+			context.moveTo(x, y+r);
+			context.lineTo(x+r, y);
+			context.lineTo(x, y-r);
+			context.lineTo(x-r, y);
+			context.closePath();
+			context.stroke();
+			
+		}
+	}
+	
+	function drawObjectLabels() {
+		for (i in objectList) {
+			object = objectList[i];
+			if (object.colourID[baseColour]!=-1) {
+				meanPosition = object.meanPosition[baseColour];
+				isComparison = object.comparisonFlags[baseColour];
+				x = meanPosition[0];
+				y = height - meanPosition[1];
+				context.fillStyle = "#000000";
+				context.font = "bold 16px Arial";
+				context.fillText(object.id, x, y);
+			}
+		}
+	}		
 	
 	function drawCircles() {
       	context.lineWidth = 2;
@@ -526,7 +576,6 @@ var baseColour = 'r';
 		console.log(object);
 		displayChartStatus("Drawing chart");
 		
-		rData = object.photometry['r'];
 		
 		var numColumns = 0;
 		var coloursForChart = [];
@@ -557,6 +606,8 @@ var baseColour = 'r';
 			chartData.push(temp);
 		}
 		
+		//console.log(frameList);
+		
 		for (var i in coloursForChart) {
 			colour = coloursForChart[i];
 			data = object.photometry[colour];
@@ -564,7 +615,10 @@ var baseColour = 'r';
 			for (var j=0; j< data.length; j++) {
 				//console.log(data[j]);
 				frameIndex = parseInt(data[j].frameIndex);
-				chartData[frameIndex][colourIndex] = data[j].magnitude;
+				//console.log(" -- ", frameList[frameIndex-1].c[colour]);
+				if (comparisonActive) measurement = data[j].magnitude/frameList[frameIndex-1].c[colour];
+				   else measurement = data[j].magnitude;
+				chartData[frameIndex][colourIndex] = measurement;
 			}
 		}
 		
@@ -582,12 +636,19 @@ var baseColour = 'r';
         var options = {
 			title: 'Photometry for Object: ' + object.id,
 			colors: chartColours, 
-			pointSize: 1
+			pointSize: 1, 
+			explorer: { actions: ['dragToZoom', 'rightClickToReset'] } 
         	}
 
         var chart = new google.visualization.ScatterChart(document.getElementById('main_chart_div'));
+        google.visualization.events.addListener(chart, 'ready', chartReady);
         chart.draw(dataTable, options);
 
+	}
+	
+	function chartReady() {
+		clearChartStatus();
+		console.log("Chart finished drawing");
 	}
 
 
