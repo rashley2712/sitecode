@@ -34,7 +34,6 @@
 		<th>RA, DEC</th>
 		<th>Run duration</th>
 		<th>Comments</th>
-		<th>Status</th>
 	</tr>
 	<tr>
 		<td id="date">{{ date }}</td>
@@ -43,7 +42,6 @@
 		<td id="radec"></td>
 		<td id="duration">{{ duration }}</td>
 		<td id="comments">{{ comments }}</td>
-		<td><span id='rStatus' class="statusNotOK">R</span><span id="gStatus" class="statusNotOK">G</span><span id="bStatus" class="statusNotOK">B</span></td>
 	</tr>
 	
 </table>
@@ -55,7 +53,8 @@
 </canvas>
 <div id="HoverText" style="position: absolute; z-index: 1; left: 50px; top: 20px; width:115x; height:32px; background-color: green; font-size: 14px; opacity: 0.5;">
         &alpha;??:??:??<br/>&delta;??:??:??
-    </div>
+</div>
+<div id="StatusText" style="position: absolute; z-index: 1; left: 50px; top: 20px; width:115x; height:32px; background-color: green; font-size: 28px; opacity: 0.8;">
 </div>
 <div id="MouseLocation"></div><br/>
 <div id="MouseWorldLocation"></div>
@@ -63,7 +62,9 @@
 
 <!-- OBJECT TABLE -->
 <div id="SelectedObjectTable"></div>
-<div id="main_chart_div" style="width: 1080px; height: 0px;"></div>
+<div id="main_chart_div" style="width: 1080px; height: 0px;">
+<div id="ChartStatus" style="z-index: 1; background-color: green; font-size: 28px; opacity: 0.8;"></div>
+</div>
 
 <div id="ObjectTable"></div>
 

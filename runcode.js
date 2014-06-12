@@ -69,6 +69,7 @@ var baseColour = 'r';
 		debug("Loading the JSON data");
 		writeToCommandWindow("Run: " + runName);
 		writeToCommandWindow("Loading the object data... please wait...");
+		displayStatus("Loading data");
 		imageFile = runName + "_" + baseColour + ".png";
 		wcsSolutionFile = runName + "_r_wcs.json";
 		runInfoJSONFile = runName + "_info.json";
@@ -211,7 +212,7 @@ var baseColour = 'r';
 		writeToCommandWindow("All data loaded.");
 		writeToCommandWindow("Press 'h' for a list of commands.");
 		
-		//drawObjectTable();
+		clearStatus();
 	}
 	
 	function handleKeyPressed(e) {
@@ -384,6 +385,31 @@ var baseColour = 'r';
 
 	}
 	
+	function displayStatus(message) {
+		// Write the text over the canvas object in the <div> called StatusText
+		$('#StatusText').html(message);
+		$('#StatusText').css('visibility', 'visible');
+	}
+	
+	function clearStatus() {
+		// Hide the floating status message
+		$('#StatusText').css('visibility', 'hidden');
+	}
+
+	function displayChartStatus(message) {
+		// Write the text over the canvas object in the <div> called ChartStatus
+		$('#ChartStatus').html(message);
+		$('#ChartStatus').css('visibility', 'visible');
+		console.log("Displaying ChartStatus:", message);
+		
+	}
+	
+	function clearChartStatus() {
+		// Hide the floating status message
+		$('#StatusText').css('visibility', 'hidden');
+	}
+	
+	
 	function distance(x1, y1, x2, y2) {
 		return Math.sqrt( (x1-x2)*(x1-x2) + (y1-y2)*(y1-y2) )
 	}
@@ -477,12 +503,10 @@ var baseColour = 'r';
 			if (object.colourID[baseColour]!=-1) {
 				meanPosition = object.meanPosition[baseColour];
 				isComparison = object.comparisonFlags[baseColour];
-				console.log('ID:' + object.id + ' is comparison:' + isComparison);
 				x = meanPosition[0];
 				y = height - meanPosition[1];
 				context.beginPath();
 				if (isComparison) {
-					console.log("Switching colour to:" + comparisonCircleColour);
 					context.strokeStyle = comparisonCircleColour;
 					}
 				 else {
@@ -500,6 +524,7 @@ var baseColour = 'r';
 	function drawChart(object) {
 		console.log("Drawing the chart of....");
 		console.log(object);
+		displayChartStatus("Drawing chart");
 		
 		rData = object.photometry['r'];
 		
@@ -512,7 +537,7 @@ var baseColour = 'r';
 			}
 		}
 		
-		console.log(coloursForChart);
+		console.log("Object has photometry for the following colours:", coloursForChart);
 		
 		headings = ["MJD"];
 		for (i in coloursForChart) headings.push(colourDescriptions[coloursForChart[i]])
@@ -521,11 +546,6 @@ var baseColour = 'r';
 		chartData.length = 0; 
 		
 		chartData.push(headings);
-		
-		console.log("Headings");
-		console.log(headings);
-		console.log(chartData);
-		console.log("That was the chart data");
 		
 		// Put the frame data into the data array
 		for (var i in frameList) {
@@ -548,8 +568,6 @@ var baseColour = 'r';
 			}
 		}
 		
-		
-		//console.log(chartData);
 		
 		// Reveal the chart area...
 		$('#main_chart_div').css('height', '400px');
