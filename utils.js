@@ -1,7 +1,12 @@
 var debugText = [];
 var debugHistory = 15;
 
-
+function async(your_function, callback) {
+    setTimeout(function() {
+        your_function();
+        if (callback) {callback();}
+    }, 0);
+}
 	
 function degToSexString(angle) {
 		degrees = Math.floor(angle);

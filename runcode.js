@@ -8,6 +8,7 @@ var variableCircleColour = "#C200DB";
 var otherCircleColour = "#003300";
 var diamondColour = "#000000";
 var squareColour = "#333333";
+var cursorStatusText = "";
 
 
 var commandHelpHTML = "Available commands: <br/>\
@@ -332,7 +333,8 @@ var baseColour = 'r';
 			updateSelectedObject(selectedObject, false);
 			selectionActive = true;
 			redrawCanvas();
-			drawChart(selectedObject);
+			displayChartStatus("Drawing chart");
+			async(drawChart, chartFinished);
 		}
 	}
 	
@@ -362,10 +364,16 @@ var baseColour = 'r';
 		$('#HoverText').css('left', (x+10) + 'px');
 		$('#HoverText').css('top', windowY+10 + 'px');
 		if (loadedWCS) {
-			$('#HoverText').html(worldLocationString);
-		} else  {
-			$('#HoverText').html(cursorString);
+			cursorString = worldLocationString;
 		}
+		
+		if (cursorStatusText!="") {
+			cursorString+="<br>" + cursorStatusText;
+		}
+		
+		$('#HoverText').html(cursorString);
+		
+		
 		if (currentObject!=null) {
 			$('#HoverText').css('background-color', 'green');
 		} else {
@@ -620,10 +628,11 @@ var baseColour = 'r';
 	}
 
 
-	function drawChart(object) {
+	function drawChart() {
+		object = selectedObject;
 		console.log("Drawing the chart of....");
 		console.log(object);
-		displayChartStatus("Drawing chart");
+		cursorStatusText = "Drawing chart";
 		
 		
 		var numColumns = 0;
@@ -705,14 +714,14 @@ var baseColour = 'r';
         	}
 
         var chart = new google.visualization.ScatterChart(document.getElementById('main_chart_div'));
-        google.visualization.events.addListener(chart, 'ready', chartReady);
         chart.draw(dataTable, options);
 
 	}
 	
-	function chartReady() {
+	
+	function chartFinished() {
+		cursorStatusText = "";
 		clearChartStatus();
-		console.log("Chart finished drawing");
 	}
 
 
