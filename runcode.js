@@ -6,6 +6,9 @@ var colours = ['r', 'g', 'b'];
 var comparisonCircleColour = "#6EF5AF";
 var variableCircleColour = "#C200DB";
 var otherCircleColour = "#003300";
+var diamondColour = "#000000";
+var squareColour = "#333333";
+
 
 var commandHelpHTML = "Available commands: <br/>\
 					<b>c</b> - show object 'circles'. <br/>\
@@ -22,11 +25,12 @@ var loadedWCS = false;
 var loadedRunInfo = false;
 var loadedObjectInfo = false;
 var loadedFrameInfo = false;
+var image = null;
 
 var selectedObject, comparisonObject;
 var width, height;	
 var context;
-var circles = false, labels=false, comparisonActive = false;
+var circles = false, labels=false, comparisonActive = false, selectionActive=false, normaliseActive = false;
 var baseColour = 'r';
 
 	function wcsSolution() {
@@ -70,7 +74,6 @@ var baseColour = 'r';
 		writeToCommandWindow("Run: " + runName);
 		writeToCommandWindow("Loading the object data... please wait...");
 		displayStatus("Loading data");
-		imageFile = runName + "_" + baseColour + ".png";
 		wcsSolutionFile = runName + "_r_wcs.json";
 		runInfoJSONFile = runName + "_info.json";
 		objectJSONFile = runName + "_objects.json";
@@ -92,7 +95,7 @@ var baseColour = 'r';
 		$.getJSON(frameJSONFile, parseFrameData);
 		
 		initCanvas();
-		clearCanvas();
+		console.log("About to load image.");
 		loadPNG();
 		document.onkeydown = handleKeyPressed;
 	}
@@ -327,6 +330,8 @@ var baseColour = 'r';
 		if (selectedObject!=null) {
 			console.log(selectedObject);
 			updateSelectedObject(selectedObject, false);
+			selectionActive = true;
+			redrawCanvas();
 			drawChart(selectedObject);
 		}
 	}
@@ -442,21 +447,16 @@ var baseColour = 'r';
 	function switchBaseImage(colour) {
 		baseColour = colour;
 		writeToCommandWindow('Switching to ' + colourDescriptions[colour] + ' base image.');
-		redrawCanvas();
+		loadPNG();
 	}
 	
 	function loadPNG() {
 		//load the image
 		filename = runName + "_" + baseColour + ".png";
-		var image = new Image();
+		image = new Image();
 		image.src = filename;
-		console.log("Loading", imageFile);
-		image.onload = function () { 
-			context.drawImage(image, 0, 0);
-			if (circles) drawCircles();
-			if (labels) drawObjectLabels();
-			if (comparisonActive) drawDiamond(comparisonObject);
-			}
+		console.log("Loading", filename);
+		image.onload = redrawCanvas;
 	}
 	
 	function filterObjects(objectList) {
@@ -490,7 +490,11 @@ var baseColour = 'r';
 	
 	function redrawCanvas() {
 		clearCanvas();
-		loadPNG();
+		context.drawImage(image, 0, 0);
+		if (circles) drawCircles();
+		if (labels) drawObjectLabels();
+		if (comparisonActive) drawSquare(comparisonObject);
+		if (selectionActive) drawDiamond(selectedObject);
 	}	
 	
 	function switchComparison() {
@@ -506,8 +510,53 @@ var baseColour = 'r';
 			console.log("New comparison object", comparisonObject);
 			updateSelectedObject(comparisonObject, true);
 			computeComparisonData(comparisonObject);
-			drawDiamond(comparisonObject);
+			drawSquare(comparisonObject);
+			selectionActive = false;
+			selectedObject = null;
 			comparisonActive = true;
+			redrawCanvas();
+		}
+	}
+	
+	function computeComparisonData(object) {
+		// For all frames put the comparison data into the frame.. if the comparison has no data for a particular frame put in '-1'
+		
+		// Initialise the comparison data
+		for (var i in frameList) {
+			frameList[i].c.r = '-1';
+			frameList[i].c.g = '-1';
+			frameList[i].c.b = '-1';
+		}
+		
+		// Now insert the photometry from the selected object
+		for (var c in colours) {
+			channel = colours[c];
+			data = object.photometry[channel]
+			for (var i in data) {
+				measurement = data[i].magnitude;
+				frameIndex = data[i].frameIndex;
+				frameList[frameIndex-1].c[channel] = measurement;
+			}
+			
+		}
+	}	
+	
+	function drawSquare(object) {
+		r = 15/1.414;
+		if (object.colourID[baseColour]!=-1) {
+			meanPosition = object.meanPosition[baseColour];
+			x = meanPosition[0];
+			y = height - meanPosition[1];
+			context.lineWidth = 2;
+			context.strokeStyle = squareColour;
+			context.beginPath();
+			context.moveTo(x-r, y+r);
+			context.lineTo(x+r ,y+r);
+			context.lineTo(x+r, y-r);
+			context.lineTo(x-r, y-r);
+			context.closePath();
+			context.stroke();
+			
 		}
 	}
 			
@@ -518,7 +567,7 @@ var baseColour = 'r';
 			x = meanPosition[0];
 			y = height - meanPosition[1];
 			context.lineWidth = 2;
-			context.strokeStyle = otherCircleColour;
+			context.strokeStyle = diamondColour;
 			context.beginPath();
 			context.moveTo(x, y+r);
 			context.lineTo(x+r, y);
@@ -619,6 +668,21 @@ var baseColour = 'r';
 				if (comparisonActive) measurement = data[j].magnitude/frameList[frameIndex-1].c[colour];
 				   else measurement = data[j].magnitude;
 				chartData[frameIndex][colourIndex] = measurement;
+			}
+		}
+		
+		if (normaliseActive) {
+			for (var i in coloursForChart) {
+			colour = coloursForChart[i];
+			data = object.photometry[colour];
+			colourIndex = parseInt(i) + 1;
+			
+			for (var j=0; j< data.length; j++) {
+				//console.log(data[j]);
+				frameIndex = parseInt(data[j].frameIndex);
+				//console.log(" -- ", frameList[frameIndex-1].c[colour]);
+					chartData[frameIndex][colourIndex] = measurement;
+				}
 			}
 		}
 		
