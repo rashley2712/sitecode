@@ -8,16 +8,15 @@ var variableCircleColour = "#C200DB";
 var otherCircleColour = "#003300";
 var diamondColour = "#000000";
 var squareColour = "#333333";
-var cursorStatusText = "";
 
 
-var commandHelpHTML = "Available commands: <br/>\
-					<b>c</b> - show object 'circles'. <br/>\
-					<b>l</b> - show object labels (IDs). <br/>\
-					<b>r</b> - switch base image to 'red'. <br/>\
-					<b>g</b> - switch base image to 'green'.<br/>\
-					<b>b</b> - switch base image to 'blue'.<br/>\
-					"
+var canvasHelpHTML = "<b>Available commands:</b><br/>\
+					<b>[m]</b> - show object <b>circles</b>. <br/>\
+					<b>[l]</b> - show object <b>labels</b>. <br/>\
+					<b>[r, g, b]</b> - switch base <b>image</b> colour. <br/>\
+					<b>[c]</b> - set as <b>comparison</b> for this colour.<br/>\
+					";
+var canvasHelpActive = false;
 
 var runInfo = {};
 var objectList = new Array();		 
@@ -27,6 +26,7 @@ var loadedRunInfo = false;
 var loadedObjectInfo = false;
 var loadedFrameInfo = false;
 var image = null;
+var mousePositionAbsolute = {x: 0, y: 0};
 
 var selectedObject, comparisonObject;
 var width, height;	
@@ -214,7 +214,7 @@ var baseColour = 'r';
 		debug("All data successfully loaded");
 		console.log("All data successfully loaded.");
 		writeToCommandWindow("All data loaded.");
-		writeToCommandWindow("Press 'h' for a list of commands.");
+		writeToCommandWindow("Press [h] to show <b>help</b>.");
 		
 		clearStatus();
 	}
@@ -224,10 +224,10 @@ var baseColour = 'r';
 		console.log(e.keyCode + " pressed");
 
 		switch(e.keyCode) {
-			case 67: //Toggle the circles
+			case 77: // 'm' pressed. Toggle the circles
 				toggleCircles();
 				break;
-			case 82: // 'r' pressed switch to red image
+			case 82: // 'r' pressed. Switch to red image
 				switchBaseImage('r');
 				break;
 			case 71: // 'g' pressed, switch to green image
@@ -237,16 +237,34 @@ var baseColour = 'r';
 				switchBaseImage('b');
 				break;
 			case 72: // 'h' pressed, show the help message
-				writeToCommandWindow(commandHelpHTML);
+				toggleChartHelp();
 				break;
 			case 76: // 'l' pressed.... render the object labels
 				toggleLabels();
 				break;
-			case 85: // 'u' pressed, use currently selected object as the comparison
+			case 67: // 'c' pressed, use currently selected object as the comparison
 				switchComparison();
 				break;
 		}
 	}
+	
+	function toggleChartHelp() {
+		// This switches on and off the chart help that floats next to the mouse cursor on the chart
+		if (canvasHelpActive) {
+			$("#CanvasHelp").html("");
+			$('#CanvasHelp').css('visibility', 'hidden');
+			canvasHelpActive = false;
+		} else {
+			$("#CanvasHelp").html(canvasHelpHTML);
+			$('#CanvasHelp').css('visibility', 'visible');
+			// Move the box to where the mouse is located
+			$('#CanvasHelp').css('left', mousePositionAbsolute.x + 'px');
+			$('#CanvasHelp').css('top', mousePositionAbsolute.y + 'px');
+		
+			canvasHelpActive = true;
+		}
+	}
+			
 		
 	function objectTable(objectList) {
 		tableString = "<table>";
@@ -333,8 +351,7 @@ var baseColour = 'r';
 			updateSelectedObject(selectedObject, false);
 			selectionActive = true;
 			redrawCanvas();
-			displayChartStatus("Drawing chart");
-			async(drawChart, chartFinished);
+			drawChart(selectedObject);
 		}
 	}
 	
@@ -345,6 +362,9 @@ var baseColour = 'r';
 			x = evt.layerX;
 			y = height - evt.layerY;
 		}
+		
+		mousePositionAbsolute = { x: evt.clientX, y: evt.clientY };
+		//console.log(mousePositionAbsolute);
 		
 		windowY = height - y;
 		
@@ -357,6 +377,7 @@ var baseColour = 'r';
 			worldLocation = wcsSolutionRed.pixelToWorld(x, y);
 			worldLocationString = "&alpha;:" + degToSexString(worldLocation.wx / 15);
 			worldLocationString+= "<br/>&delta;:" + degToSexString(worldLocation.wy);
+			$('#HoverText').css('height', '32px');
 			$('#MouseWorldLocation').html(worldLocationString);
 		}
 		
@@ -364,16 +385,10 @@ var baseColour = 'r';
 		$('#HoverText').css('left', (x+10) + 'px');
 		$('#HoverText').css('top', windowY+10 + 'px');
 		if (loadedWCS) {
-			cursorString = worldLocationString;
+			$('#HoverText').html(worldLocationString);
+		} else  {
+			$('#HoverText').html(cursorString);
 		}
-		
-		if (cursorStatusText!="") {
-			cursorString+="<br>" + cursorStatusText;
-		}
-		
-		$('#HoverText').html(cursorString);
-		
-		
 		if (currentObject!=null) {
 			$('#HoverText').css('background-color', 'green');
 		} else {
@@ -628,11 +643,10 @@ var baseColour = 'r';
 	}
 
 
-	function drawChart() {
-		object = selectedObject;
+	function drawChart(object) {
 		console.log("Drawing the chart of....");
 		console.log(object);
-		cursorStatusText = "Drawing chart";
+		displayChartStatus("Drawing chart");
 		
 		
 		var numColumns = 0;
@@ -714,14 +728,14 @@ var baseColour = 'r';
         	}
 
         var chart = new google.visualization.ScatterChart(document.getElementById('main_chart_div'));
+        google.visualization.events.addListener(chart, 'ready', chartReady);
         chart.draw(dataTable, options);
 
 	}
 	
-	
-	function chartFinished() {
-		cursorStatusText = "";
+	function chartReady() {
 		clearChartStatus();
+		console.log("Chart finished drawing");
 	}
 
 
