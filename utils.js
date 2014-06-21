@@ -7,6 +7,13 @@ function async(your_function, callback) {
         if (callback) {callback();}
     }, 0);
 }
+
+function getObjectByID(objects, id) {
+	// Returns the object with matching id from a list of objects (with the id property)
+	for (var i in objects) 
+		if (objects[i].id == id) return objects[i];
+	return null;
+}
 	
 function degToSexString(angle) {
 		degrees = Math.floor(angle);

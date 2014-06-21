@@ -7,7 +7,7 @@ var comparisonCircleColour = "#6EF5AF";
 var variableCircleColour = "#C200DB";
 var otherCircleColour = "#003300";
 var diamondColour = "#000000";
-var squareColour = "#333333";
+var squareColour = "#000000";
 
 
 var canvasHelpHTML = "<b>Available commands:</b><br/>\
@@ -28,10 +28,11 @@ var loadedFrameInfo = false;
 var image = null;
 var mousePositionAbsolute = {x: 0, y: 0};
 
-var selectedObject, comparisonObject;
+var selectedObject;
 var width, height;	
 var context;
-var circles = false, labels=false, comparisonActive = false, selectionActive=false, normaliseActive = false;
+var circles = false, labels=false, selectionActive=false, normaliseActive = false;
+var comparisonObject = {r: -1, g: -1, b: -1};
 var baseColour = 'r';
 
 	function wcsSolution() {
@@ -243,7 +244,7 @@ var baseColour = 'r';
 				toggleLabels();
 				break;
 			case 67: // 'c' pressed, use currently selected object as the comparison
-				switchComparison();
+				updateComparison();
 				break;
 		}
 	}
@@ -425,11 +426,9 @@ var baseColour = 'r';
 		return Math.sqrt( (x1-x2)*(x1-x2) + (y1-y2)*(y1-y2) )
 	}
 	
-	function updateSelectedObject(object, comparison) {
-		colours = ['r', 'g', 'b'];
+	function updateSelectedObject(object) {
 		tableHTML = "<table>";
-		if (!comparison) tableHTML+= "<tr><th colspan='3'>Selected</th></tr>";
-		  else tableHTML+= "<tr><th colspan='3'>Comparison</th></tr>";
+		tableHTML+= "<tr><th colspan='3'>Selected</th></tr>";
 		tableHTML+= "<tr><th>ID</th><th>Position</th><th>Data points</th></tr>";
 
 		tableHTML+= "<tr><td>" + object.id + "</td>"
@@ -450,9 +449,33 @@ var baseColour = 'r';
 
 		tableHTML+= "</tr>";
 		tableHTML+= "</table>";
-		if (!comparison) $('#SelectedObjectTable').html(tableHTML);
-		  else $('#ComparisonObjectTable').html(tableHTML);
-
+		$('#SelectedObjectTable').html(tableHTML);
+		
+	}
+	
+	
+	function updateComparisonTable() {
+		// Updates the HTML in the table containing info about which objects we are using as comparisons
+		tableHTML = "<table>";
+		tableHTML+= "<tr><th colspan='3' align='center'>Comparison</th></tr>";
+		tableHTML+= "<tr><th>Red</th><th>Green</th><th>Blue</th></tr>";
+		tableHTML+= "<tr>";
+		for (var i in colours) {
+			c = colours[i];
+			id = comparisonObject[c];
+			tableHTML+= "<td>";
+			referenceObject = getObjectByID(objectList, id);
+			if (id!=-1) {
+				numFrames = referenceObject.photometry[c].length;
+				tableHTML+= "ID: " + comparisonObject[c] + "<br/>" + numFrames;
+			} else {
+				tableHTML+= "off";
+			}
+			tableHTML+= "</td>";
+		}
+		tableHTML+= "</tr>";
+		tableHTML+= "</table>";
+		$('#ComparisonObjectTable').html(tableHTML);
 	}
 	
 	function getObjectUnderMouseCursor(x, y) {
@@ -516,71 +539,63 @@ var baseColour = 'r';
 		context.drawImage(image, 0, 0);
 		if (circles) drawCircles();
 		if (labels) drawObjectLabels();
-		if (comparisonActive) drawSquare(comparisonObject);
+		if (comparisonObject[baseColour]!=-1) drawSquare(getObjectByID(objectList, comparisonObject[baseColour]));
 		if (selectionActive) drawDiamond(selectedObject);
 	}	
 	
-	function switchComparison() {
-		if (comparisonActive) {
-			comparisonActive = false;
-			$('#ComparisonObjectTable').html("");
-			comparisonObject = null;
+	function updateComparison() {
+		if (comparisonObject[baseColour]!=-1) {
+			comparisonObject[baseColour]=-1;
+			updateComparisonTable();
 			redrawCanvas();
-			return
+			drawComparisonChart();
+			return;
 		}
 		if (selectedObject!=null) {
-			comparisonObject = selectedObject;
-			console.log("New comparison object", comparisonObject);
-			updateSelectedObject(comparisonObject, true);
-			computeComparisonData(comparisonObject);
-			drawSquare(comparisonObject);
+			comparisonObject[baseColour] = selectedObject.id;
+			console.log("Updated comparison object", comparisonObject);
+			updateComparisonTable();
+			recomputeComparisonData(comparisonObject[baseColour], baseColour);
 			selectionActive = false;
 			selectedObject = null;
-			comparisonActive = true;
 			redrawCanvas();
+			drawComparisonChart();
 		}
 	}
 	
-	function computeComparisonData(object) {
+	function recomputeComparisonData(objectID, colour) {
 		// For all frames put the comparison data into the frame.. if the comparison has no data for a particular frame put in '-1'
 		
-		// Initialise the comparison data
+		// Initialise the comparison data for this colour
 		for (var i in frameList) {
-			frameList[i].c.r = '-1';
-			frameList[i].c.g = '-1';
-			frameList[i].c.b = '-1';
+			frameList[i].c[colour] = '-1';
 		}
 		
 		// Now insert the photometry from the selected object
-		for (var c in colours) {
-			channel = colours[c];
-			data = object.photometry[channel]
-			for (var i in data) {
-				measurement = data[i].magnitude;
-				frameIndex = data[i].frameIndex;
-				frameList[frameIndex-1].c[channel] = measurement;
-			}
-			
+		object = getObjectByID(objectList, objectID);
+		data = object.photometry[colour]
+		for (var i in data) {
+			measurement = data[i].magnitude;
+			frameIndex = data[i].frameIndex;
+			frameList[frameIndex-1].c[colour] = measurement;	
 		}
+		//console.log(frameList);
 	}	
 	
 	function drawSquare(object) {
 		r = 15/1.414;
-		if (object.colourID[baseColour]!=-1) {
-			meanPosition = object.meanPosition[baseColour];
-			x = meanPosition[0];
-			y = height - meanPosition[1];
-			context.lineWidth = 2;
-			context.strokeStyle = squareColour;
-			context.beginPath();
-			context.moveTo(x-r, y+r);
-			context.lineTo(x+r ,y+r);
-			context.lineTo(x+r, y-r);
-			context.lineTo(x-r, y-r);
-			context.closePath();
-			context.stroke();
-			
-		}
+		meanPosition = object.meanPosition[baseColour];
+		x = meanPosition[0];
+		y = height - meanPosition[1];
+		context.lineWidth = 2;
+		context.strokeStyle = squareColour;
+		context.beginPath();
+		context.moveTo(x-r, y+r);
+		context.lineTo(x+r ,y+r);
+		context.lineTo(x+r, y-r);
+		context.lineTo(x-r, y-r);
+		context.closePath();
+		context.stroke();
 	}
 			
 	function drawDiamond(object) {
@@ -688,8 +703,8 @@ var baseColour = 'r';
 				//console.log(data[j]);
 				frameIndex = parseInt(data[j].frameIndex);
 				//console.log(" -- ", frameList[frameIndex-1].c[colour]);
-				if (comparisonActive) measurement = data[j].magnitude/frameList[frameIndex-1].c[colour];
-				   else measurement = data[j].magnitude;
+				//if (comparisonActive) measurement = data[j].magnitude/frameList[frameIndex-1].c[colour];
+				measurement = data[j].magnitude;
 				chartData[frameIndex][colourIndex] = measurement;
 			}
 		}
@@ -736,6 +751,83 @@ var baseColour = 'r';
 	function chartReady() {
 		clearChartStatus();
 		console.log("Chart finished drawing");
+	}
+	
+	function drawComparisonChart() {
+		console.log("Drawing the chart of the comparison....");
+		
+		var numColumns = 0;
+		var coloursForChart = [];
+		for (i in colours) {
+			c = colours[i];
+			if (comparisonObject[c]!=-1) {
+				numColumns++;
+				coloursForChart.push(c);
+			}
+		}
+		
+		console.log("Comparison photometry exists for the following colours:", coloursForChart);
+		
+		if (coloursForChart.length==0) {
+			// No Comparison selected for any colour, hide the chart
+			$('#comparison_chart_div').css('height', '0px');
+			$('#comparison_chart_div').css('visibility', 'hidden');
+			console.log("HIding the comp[arison chart");
+			return;
+		}
+
+			
+	
+		headings = ["MJD"];
+		for (i in coloursForChart) headings.push(colourDescriptions[coloursForChart[i]])
+		
+		chartData = [];
+		chartData.length = 0; 
+		
+		chartData.push(headings);
+		
+		// Put the frame data into the data array
+		for (var i in frameList) {
+			MJD = frameList[i].MJD;
+			temp = [ MJD ];
+			for (var j in coloursForChart) {
+				temp.push(null);
+			}
+			chartData.push(temp);
+		}
+		
+		
+		for (var i in coloursForChart) {
+			colour = coloursForChart[i];
+			data = frameList;
+			colourIndex = parseInt(i) + 1;
+			for (var j=0; j< data.length; j++) {
+				measurement = data[j].c[colour];
+				if (measurement!=-1) chartData[j+1][colourIndex] = measurement;
+			}
+		}
+		
+		
+		// Reveal the chart area...
+		$('#comparison_chart_div').css('height', '400px');
+		$('#comparison_chart_div').css('visibility', 'visible');
+		
+		var dataTable = google.visualization.arrayToDataTable(chartData);
+
+		var chartColours = [];
+		for (var c in coloursForChart) {
+			chartColours.push(colourDescriptions[coloursForChart[c]]);
+		}
+
+        var options = {
+			title: 'Comparison photometry',
+			colors: chartColours, 
+			pointSize: 1
+        	}
+
+        var chart = new google.visualization.ScatterChart(document.getElementById('comparison_chart_div'));
+        google.visualization.events.addListener(chart, 'ready', chartReady);
+        chart.draw(dataTable, options);
 	}
 
 
