@@ -31,7 +31,7 @@ var mousePositionAbsolute = {x: 0, y: 0};
 var selectedObject;
 var width, height;	
 var context;
-var circles = false, labels=false, selectionActive=false, normaliseActive = false;
+var circles = false, labels=false, selectionActive=false, normaliseActive = true;
 var comparisonObject = {r: -1, g: -1, b: -1};
 var baseColour = 'r';
 
@@ -97,7 +97,6 @@ var baseColour = 'r';
 		$.getJSON(frameJSONFile, parseFrameData);
 		
 		initCanvas();
-		console.log("About to load image.");
 		loadPNG();
 		document.onkeydown = handleKeyPressed;
 	}
@@ -317,7 +316,7 @@ var baseColour = 'r';
 	}
 	
 	function drawObjectTable() {
-		htmlString =  objectTable(objectList);
+		htmlString = objectTable(objectList);
 		$('#ObjectTable').html(htmlString);
 	}
 	
@@ -570,7 +569,7 @@ var baseColour = 'r';
 		for (var i in frameList) {
 			frameList[i].c[colour] = '-1';
 		}
-		
+		//console.log("reComputing the comparison data");
 		// Now insert the photometry from the selected object
 		object = getObjectByID(objectList, objectID);
 		data = object.photometry[colour]
@@ -703,23 +702,44 @@ var baseColour = 'r';
 				//console.log(data[j]);
 				frameIndex = parseInt(data[j].frameIndex);
 				//console.log(" -- ", frameList[frameIndex-1].c[colour]);
-				//if (comparisonActive) measurement = data[j].magnitude/frameList[frameIndex-1].c[colour];
-				measurement = data[j].magnitude;
-				chartData[frameIndex][colourIndex] = measurement;
+				if (comparisonObject[colour]!=-1) {
+					comparisonReference = frameList[frameIndex-1].c[colour];
+					if (comparisonReference!=-1) measurement = data[j].magnitude/comparisonReference;
+					   else measurement = -1;
+					}
+				else { 
+					measurement = data[j].magnitude; 
+					}
+				if (measurement!=-1) chartData[frameIndex][colourIndex] = measurement;
 			}
 		}
 		
 		if (normaliseActive) {
 			for (var i in coloursForChart) {
 			colour = coloursForChart[i];
-			data = object.photometry[colour];
 			colourIndex = parseInt(i) + 1;
+			min = 100000;
+			max = 0;
+			for (var j=1; j<chartData.length; j++) {
+				value = chartData[j][colourIndex];
+				if (value!=null) {
+					console.log(colour, value);
+					if (value>max) max = value;
+					if (value<min) min = value;
+					}
+				}
+			console.log("Max:", max);
+			console.log("Min:", min);
+			range = max - min;
 			
-			for (var j=0; j< data.length; j++) {
-				//console.log(data[j]);
-				frameIndex = parseInt(data[j].frameIndex);
-				//console.log(" -- ", frameList[frameIndex-1].c[colour]);
-					chartData[frameIndex][colourIndex] = measurement;
+			for (var j=1; j<chartData.length; j++) {
+				value = chartData[j][colourIndex];
+				if (value!=null) {
+					value = (value - min) / range;
+					chartData[j][colourIndex] = value;
+					console.log(colour, value);
+					
+					}
 				}
 			}
 		}
