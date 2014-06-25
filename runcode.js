@@ -227,6 +227,9 @@ var baseColour = 'r';
 			case 77: // 'm' pressed. Toggle the circles
 				toggleCircles();
 				break;
+			case 78: // 'n' pressed. Toggle the normalisation of the chart
+				toggleNormalisation();
+				break;
 			case 82: // 'r' pressed. Switch to red image
 				switchBaseImage('r');
 				break;
@@ -245,6 +248,16 @@ var baseColour = 'r';
 			case 67: // 'c' pressed, use currently selected object as the comparison
 				updateComparison();
 				break;
+		}
+	}
+	
+	function toggleNormalisation() {
+		if (normaliseActive) {
+			normaliseActive = false;
+			if (currentObject!=null) drawChart(currentObject);
+		} else {
+			normaliseActive = true;
+			if (currentObject!=null) drawChart(currentObject);
 		}
 	}
 	
