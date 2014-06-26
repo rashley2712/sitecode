@@ -361,10 +361,10 @@ var baseColour = 'r';
 		selectedObject = getObjectUnderMouseCursor(x, y)
 		if (selectedObject!=null) {
 			console.log(selectedObject);
-			updateSelectedObject(selectedObject, false);
+			updateSelectedObject(selectedObject);
 			selectionActive = true;
 			redrawCanvas();
-			drawChart(selectedObject);
+			async(drawChart, null); 
 		}
 	}
 	
@@ -440,7 +440,6 @@ var baseColour = 'r';
 	
 	function updateSelectedObject(object) {
 		tableHTML = "<table>";
-		tableHTML+= "<tr><th colspan='3'>Selected</th></tr>";
 		tableHTML+= "<tr><th>ID</th><th>Position</th><th>Data points</th></tr>";
 
 		tableHTML+= "<tr><td>" + object.id + "</td>"
@@ -469,7 +468,6 @@ var baseColour = 'r';
 	function updateComparisonTable() {
 		// Updates the HTML in the table containing info about which objects we are using as comparisons
 		tableHTML = "<table>";
-		tableHTML+= "<tr><th colspan='3' align='center'>Comparison</th></tr>";
 		tableHTML+= "<tr><th>Red</th><th>Green</th><th>Blue</th></tr>";
 		tableHTML+= "<tr>";
 		for (var i in colours) {
@@ -582,7 +580,6 @@ var baseColour = 'r';
 		for (var i in frameList) {
 			frameList[i].c[colour] = '-1';
 		}
-		//console.log("reComputing the comparison data");
 		// Now insert the photometry from the selected object
 		object = getObjectByID(objectList, objectID);
 		data = object.photometry[colour]
@@ -591,7 +588,6 @@ var baseColour = 'r';
 			frameIndex = data[i].frameIndex;
 			frameList[frameIndex-1].c[colour] = measurement;	
 		}
-		//console.log(frameList);
 	}	
 	
 	function drawSquare(object) {
@@ -671,10 +667,11 @@ var baseColour = 'r';
 
 
 	function drawChart(object) {
+		if (object==null) object = selectedObject;
+		
 		console.log("Drawing the chart of....");
 		console.log(object);
 		displayChartStatus("Drawing chart");
-		
 		
 		var numColumns = 0;
 		var coloursForChart = [];
@@ -736,13 +733,13 @@ var baseColour = 'r';
 			for (var j=1; j<chartData.length; j++) {
 				value = chartData[j][colourIndex];
 				if (value!=null) {
-					console.log(colour, value);
+					//console.log(colour, value);
 					if (value>max) max = value;
 					if (value<min) min = value;
 					}
 				}
-			console.log("Max:", max);
-			console.log("Min:", min);
+			//console.log("Max:", max);
+			//console.log("Min:", min);
 			range = max - min;
 			
 			for (var j=1; j<chartData.length; j++) {
@@ -750,7 +747,7 @@ var baseColour = 'r';
 				if (value!=null) {
 					value = (value - min) / range;
 					chartData[j][colourIndex] = value;
-					console.log(colour, value);
+					//console.log(colour, value);
 					
 					}
 				}
