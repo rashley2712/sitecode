@@ -98,7 +98,15 @@ var baseColour = 'r';
 		
 		initCanvas();
 		loadPNG();
+		setCheckBoxes();
 		document.onkeydown = handleKeyPressed;
+	}
+	
+	function setCheckBoxes() {
+		//if (comparisonActive) $('#usecomparison').prop("checked", true);
+		$('#labels').prop("checked", labels);
+		$('#circles').prop("checked", circles);
+		$('#baseimage').prop("selected", true);
 	}
 	
 	function loadJSON(path, callback) {   
@@ -464,7 +472,6 @@ var baseColour = 'r';
 		
 	}
 	
-	
 	function updateComparisonTable() {
 		// Updates the HTML in the table containing info about which objects we are using as comparisons
 		tableHTML = "<table>";
@@ -532,6 +539,7 @@ var baseColour = 'r';
 			circles = false;
 			redrawCanvas();
 		}
+		$('#circles').prop("checked", circles);
 	}
 
 	function toggleLabels() {
@@ -542,6 +550,7 @@ var baseColour = 'r';
 			labels = false;
 			redrawCanvas();
 		}
+		$('#labels').prop("checked", labels);
 	}
 	
 	function redrawCanvas() {

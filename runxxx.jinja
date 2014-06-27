@@ -73,6 +73,33 @@
 		<td><div id="ComparisonObjectTable"></div></td>
 	</tr>
 </table>
+<table class="statustable" width="1080px">
+	<tr>
+		<th>Switches</th>
+		<th>Selected object</th>
+		<th>Comparison object(s)</th>
+	</tr>
+	<tr>
+	<td>
+		<table border='1' class="statustable">
+			<tr align="left">
+				<td align="left"><input type="checkbox" id="labels" onclick="toggleLabels()">Show labels</td>
+				<td align="left"><input type="checkbox" id="usecomparison">Use comparison</td>
+				<td>Base image</td>
+			</tr>
+			<tr align="left">
+				<td align="left"><input type="checkbox" id="circles" onclick="toggleCircles()">Show circles</td>
+				<td align="left"><input type="checkbox" id="normalise">Normalise the chart</td>
+				<td>
+					<input type="radio" name="baseimage" value="r">Red<br>
+					<input type="radio" name="baseimage" value="g">Green<br>
+					<input type="radio" name="baseimage" value="b">Blue<br>
+				</td>
+			</tr>
+		</table>
+</table>
+
+
 <!-- CHART AREA -->
 
 <div id="ChartStatus" style="background-color: green; font-size: 28px; opacity: 0.8;"></div>
