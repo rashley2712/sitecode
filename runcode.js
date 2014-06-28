@@ -32,8 +32,9 @@ var selectedObject;
 var width, height;	
 var context;
 var circles = false, labels=false, selectionActive=false, normaliseActive = true;
+var plotRed = true, plotGreen = true, plotBlue = true;
 var comparisonObject = {r: -1, g: -1, b: -1};
-var baseColour = 'r';
+var baseColour = 'g';
 
 	function wcsSolution() {
 		this.equinox = 0;	
@@ -99,6 +100,7 @@ var baseColour = 'r';
 		initCanvas();
 		loadPNG();
 		setCheckBoxes();
+		updateComparisonTable();
 		document.onkeydown = handleKeyPressed;
 	}
 	
@@ -106,7 +108,11 @@ var baseColour = 'r';
 		//if (comparisonActive) $('#usecomparison').prop("checked", true);
 		$('#labels').prop("checked", labels);
 		$('#circles').prop("checked", circles);
-		$('#baseimage').prop("selected", true);
+		$('#normalise').prop("checked", normaliseActive);
+		$('#baseimage_'+baseColour).prop("checked", true);
+		$('#plotred').prop("checked", plotRed);
+		$('#plotgreen').prop("checked", plotGreen);
+		$('#plotblue').prop("checked", plotBlue);
 	}
 	
 	function loadJSON(path, callback) {   
@@ -259,14 +265,37 @@ var baseColour = 'r';
 		}
 	}
 	
+	function togglePlotActive(colour) {
+		switch(colour) {
+			case 'r':
+				plotRed = !plotRed
+				$('#plotred').prop("checked", plotRed);
+				break;
+			case 'g':
+				plotGreen = !plotGreen
+				$('#plotgreen').prop("checked", plotGreen);
+				break;
+			case 'b':
+				plotBlue = !plotBlue
+				$('#plotblue').prop("checked", plotBlue);
+				break;
+			}
+			async(drawChart, null);
+		}
+		
+	
 	function toggleNormalisation() {
 		if (normaliseActive) {
 			normaliseActive = false;
-			if (currentObject!=null) drawChart(currentObject);
+			if (selectedObject!=null) drawChart(selectedObject);
+			
 		} else {
 			normaliseActive = true;
-			if (currentObject!=null) drawChart(currentObject);
+			if (selectedObject!=null) drawChart(selectedObject);
 		}
+		console.log("Switched normalise mode", selectedObject);
+		$('#normalise').prop("checked", normaliseActive);
+
 	}
 	
 	function toggleChartHelp() {
@@ -447,7 +476,7 @@ var baseColour = 'r';
 	}
 	
 	function updateSelectedObject(object) {
-		tableHTML = "<table>";
+		tableHTML = "<table class='statustable'>";
 		tableHTML+= "<tr><th>ID</th><th>Position</th><th>Data points</th></tr>";
 
 		tableHTML+= "<tr><td>" + object.id + "</td>"
@@ -468,13 +497,13 @@ var baseColour = 'r';
 
 		tableHTML+= "</tr>";
 		tableHTML+= "</table>";
-		$('#SelectedObjectTable').html(tableHTML);
+		$('#selectedobject').html(tableHTML);
 		
 	}
 	
 	function updateComparisonTable() {
 		// Updates the HTML in the table containing info about which objects we are using as comparisons
-		tableHTML = "<table>";
+		tableHTML = "<table class='statustable'>";
 		tableHTML+= "<tr><th>Red</th><th>Green</th><th>Blue</th></tr>";
 		tableHTML+= "<tr>";
 		for (var i in colours) {
@@ -486,13 +515,13 @@ var baseColour = 'r';
 				numFrames = referenceObject.photometry[c].length;
 				tableHTML+= "ID: " + comparisonObject[c] + "<br/>" + numFrames;
 			} else {
-				tableHTML+= "off";
+				tableHTML+= "none";
 			}
 			tableHTML+= "</td>";
 		}
 		tableHTML+= "</tr>";
 		tableHTML+= "</table>";
-		$('#ComparisonObjectTable').html(tableHTML);
+		$('#comparisonobject').html(tableHTML);
 	}
 	
 	function getObjectUnderMouseCursor(x, y) {
@@ -510,6 +539,7 @@ var baseColour = 'r';
 	function switchBaseImage(colour) {
 		baseColour = colour;
 		writeToCommandWindow('Switching to ' + colourDescriptions[colour] + ' base image.');
+		$('#baseimage_'+baseColour).prop("checked", true);
 		loadPNG();
 	}
 	
@@ -520,15 +550,6 @@ var baseColour = 'r';
 		image.src = filename;
 		console.log("Loading", filename);
 		image.onload = redrawCanvas;
-	}
-	
-	function filterObjects(objectList) {
-		returnList = new Array();
-		for (i in objectList) {
-			if (objectList[i].data.length > 1) returnList.push(objectList[i])
-		}
-		
-		return returnList;
 	}
 	
 	function toggleCircles() {
@@ -682,19 +703,32 @@ var baseColour = 'r';
 		console.log(object);
 		displayChartStatus("Drawing chart");
 		
+		baseColours = [];
+		if (plotRed) baseColours.push('r');
+		if (plotGreen) baseColours.push('g');
+		if (plotBlue) baseColours.push('b');
+		
+		if (baseColours.length==0) {
+			$('#main_chart_div').css('height', '0px');
+			$('#main_chart_div').css('visibility', 'hidden');
+			return;
+		}
+		
 		var numColumns = 0;
 		var coloursForChart = [];
-		for (i in colours) {
-			if (object.colourID[colours[i]]!=-1) {
+		for (i in baseColours) {
+			if (object.colourID[baseColours[i]]!=-1) {
 				numColumns++;
-				coloursForChart.push(colours[i]);
+				coloursForChart.push(baseColours[i]);
 			}
 		}
 		
 		console.log("Object has photometry for the following colours:", coloursForChart);
 		
 		headings = ["MJD"];
-		for (i in coloursForChart) headings.push(colourDescriptions[coloursForChart[i]])
+		for (i in coloursForChart) {
+			headings.push(colourDescriptions[coloursForChart[i]]);
+		}
 		
 		chartData = [];
 		chartData.length = 0; 
@@ -766,6 +800,8 @@ var baseColour = 'r';
 		
 		// Reveal the chart area...
 		$('#main_chart_div').css('height', '400px');
+		$('#main_chart_div').css('visibility', 'visible');
+			
 		
 		var dataTable = google.visualization.arrayToDataTable(chartData);
 
@@ -811,7 +847,6 @@ var baseColour = 'r';
 			// No Comparison selected for any colour, hide the chart
 			$('#comparison_chart_div').css('height', '0px');
 			$('#comparison_chart_div').css('visibility', 'hidden');
-			console.log("HIding the comp[arison chart");
 			return;
 		}
 

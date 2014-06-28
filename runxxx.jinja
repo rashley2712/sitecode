@@ -63,40 +63,40 @@
 <br/>
 
 <!-- OBJECT TABLE -->
-<table>
-	<tr>
-		<th>Selected object</th>
-		<th>Comparison objects</th>
-	</tr>
-	<tr>
-		<td><div id="SelectedObjectTable"></div></td>
-		<td><div id="ComparisonObjectTable"></div></td>
-	</tr>
-</table>
 <table class="statustable" width="1080px">
 	<tr>
-		<th>Switches</th>
+		<th width="440px">Switches</th>
 		<th>Selected object</th>
 		<th>Comparison object(s)</th>
 	</tr>
 	<tr>
-	<td>
-		<table border='1' class="statustable">
-			<tr align="left">
-				<td align="left"><input type="checkbox" id="labels" onclick="toggleLabels()">Show labels</td>
-				<td align="left"><input type="checkbox" id="usecomparison">Use comparison</td>
-				<td>Base image</td>
-			</tr>
-			<tr align="left">
-				<td align="left"><input type="checkbox" id="circles" onclick="toggleCircles()">Show circles</td>
-				<td align="left"><input type="checkbox" id="normalise">Normalise the chart</td>
-				<td>
-					<input type="radio" name="baseimage" value="r">Red<br>
-					<input type="radio" name="baseimage" value="g">Green<br>
-					<input type="radio" name="baseimage" value="b">Blue<br>
-				</td>
-			</tr>
-		</table>
+		<td>
+			<table border='0' class="statustable">
+				<tr align="left">
+					<td class="left"><span onclick="toggleLabels()"><input type="checkbox" id="labels">Show labels</span></td>
+					<td class="left"><input type="checkbox" id="usecomparison">Use comparison</td>
+					<td>Base image</td>
+					<td>Plot colours</td>
+				</tr>
+				<tr>
+					<td class="left"><span onclick="toggleCircles()"><input type="checkbox" id="circles">Show circles</span></td>
+					<td class="left"><span onclick="toggleNormalisation()"><input type="checkbox" id="normalise">Normalise the chart</span></td>
+					<td class="left">
+						<span onclick="switchBaseImage('r')"><input type="radio" name="baseimage" id='baseimage_r' value="r" >Red</span><br>
+						<span onclick="switchBaseImage('g')"><input type="radio" name="baseimage" id='baseimage_g' value="g">Green</span><br>
+						<span onclick="switchBaseImage('b')"><input type="radio" name="baseimage" id='baseimage_b' value="b">Blue</span><br>
+					</td>
+					<td class="left">
+						<span onclick="togglePlotActive('r')"><input type="checkbox" id='plotred'>Red</span><br>
+						<span onclick="togglePlotActive('g')"><input type="checkbox" id='plotgreen'>Green</span><br>
+						<span onclick="togglePlotActive('b')"><input type="checkbox" id='plotblue'>Blue</span><br>
+					</td>
+				</tr>
+			</table>
+		</td>
+		<td class='cen' id="selectedobject">None</td>
+		<td class='cen' id="comparisonobject">None</td>
+	</tr>
 </table>
 
 
