@@ -248,7 +248,7 @@ var baseColour = 'g';
 					updateComparisonTable();
 					recomputeComparisonData(comparisonObject[colour], colour);
 					drawComparisonChart();
-					continue;
+					break;
 				}
 			}
 		writeToCommandWindow("Chosen object id:" + comparisonObject[colour] + " for " + colourDescriptions[colour]);
