@@ -2,7 +2,7 @@ var debugText = [];
 var debugHistory = 15;
 
 function async(your_function, callback) {
-	console.log("Making an asynchronous call to...", your_function);
+	//console.log("Making an asynchronous call to...", your_function);
     setTimeout(function() {
         your_function();
         if (callback) {callback();}

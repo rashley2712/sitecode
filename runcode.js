@@ -32,6 +32,7 @@ var selectedObject;
 var width, height;	
 var context;
 var circles = false, labels=false, selectionActive=false, normaliseActive = true;
+var comparisonActive = true;
 var plotRed = true, plotGreen = true, plotBlue = true;
 var comparisonObject = {r: -1, g: -1, b: -1};
 var baseColour = 'g';
@@ -109,6 +110,7 @@ var baseColour = 'g';
 		$('#labels').prop("checked", labels);
 		$('#circles').prop("checked", circles);
 		$('#normalise').prop("checked", normaliseActive);
+		$('#usecomparison').prop("checked", comparisonActive);
 		$('#baseimage_'+baseColour).prop("checked", true);
 		$('#plotred').prop("checked", plotRed);
 		$('#plotgreen').prop("checked", plotGreen);
@@ -230,7 +232,31 @@ var baseColour = 'g';
 		writeToCommandWindow("All data loaded.");
 		writeToCommandWindow("Press [h] to show <b>help</b>.");
 		
+		writeToCommandWindow("Looking for a sensible comparison object for each colour...");
+		if (comparisonActive) findComparisons();
 		clearStatus();
+	}
+	
+	function findComparisons() {
+		for (var j in colours) {
+			colour = colours[j];
+			for (var i in objectList) {
+				object = objectList[i];
+				if (object.comparisonFlags[colour]) {
+					comparisonObject[colour] = object.id;
+					console.log("Updated comparison object", comparisonObject);
+					updateComparisonTable();
+					recomputeComparisonData(comparisonObject[colour], colour);
+					drawComparisonChart();
+					continue;
+				}
+			}
+		writeToCommandWindow("Chosen object id:" + comparisonObject[colour] + " for " + colourDescriptions[colour]);
+
+		}
+		
+		redrawCanvas();
+		
 	}
 	
 	function handleKeyPressed(e) {
@@ -283,6 +309,13 @@ var baseColour = 'g';
 			async(drawChart, null);
 		}
 		
+		
+	function toggleComparison() {
+		comparisonActive = !comparisonActive;
+		$('#usecomparison').prop("checked", comparisonActive);
+		async(drawChart, null);
+		async(drawComparisonChart, null);
+	}
 	
 	function toggleNormalisation() {
 		if (normaliseActive) {
@@ -553,6 +586,7 @@ var baseColour = 'g';
 	}
 	
 	function toggleCircles() {
+		console.log("toggling circles");
 		if (!circles) {
 			drawCircles();
 			circles = true;
@@ -755,7 +789,7 @@ var baseColour = 'g';
 				//console.log(data[j]);
 				frameIndex = parseInt(data[j].frameIndex);
 				//console.log(" -- ", frameList[frameIndex-1].c[colour]);
-				if (comparisonObject[colour]!=-1) {
+				if (comparisonActive && comparisonObject[colour]!=-1) {
 					comparisonReference = frameList[frameIndex-1].c[colour];
 					if (comparisonReference!=-1) measurement = data[j].magnitude/comparisonReference;
 					   else measurement = -1;
@@ -843,7 +877,7 @@ var baseColour = 'g';
 		
 		console.log("Comparison photometry exists for the following colours:", coloursForChart);
 		
-		if (coloursForChart.length==0) {
+		if ((coloursForChart.length==0) || !comparisonActive) {
 			// No Comparison selected for any colour, hide the chart
 			$('#comparison_chart_div').css('height', '0px');
 			$('#comparison_chart_div').css('visibility', 'hidden');
