@@ -251,7 +251,7 @@ var baseColour = 'g';
 					break;
 				}
 			}
-		writeToCommandWindow("Chosen object id:" + comparisonObject[colour] + " for " + colourDescriptions[colour]);
+		writeToCommandWindow("Chosen object id:" + comparisonObject[colour] + " for " + colourDescriptions[colour] + " comparison.");
 
 		}
 		
