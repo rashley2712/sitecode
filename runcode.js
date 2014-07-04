@@ -200,6 +200,7 @@ var baseColour = 'g';
 		decString = degToSexString(runInfo.dec);
 		radecString = "&alpha;:" + raString + " &delta;:" + decString;
 		$('#radec').html(radecString);
+		console.log('Extended runinfo:', runInfo.sexOptions);
 	}
 	
 	
@@ -234,6 +235,7 @@ var baseColour = 'g';
 		
 		writeToCommandWindow("Looking for a sensible comparison object for each colour...");
 		if (comparisonActive) findComparisons();
+		if (objectList.length<21) toggleLabels();
 		clearStatus();
 	}
 	
