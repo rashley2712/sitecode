@@ -200,6 +200,16 @@ var baseColour = 'g';
 		decString = degToSexString(runInfo.dec);
 		radecString = "&alpha;:" + raString + " &delta;:" + decString;
 		$('#radec').html(radecString);
+		
+		sexOptionsString = "";
+		
+		sexOptionsString+= "Magnitude derived from: " + runInfo.sexMagnitude + "<br/>";
+		
+		for (var p in runInfo.sexOptions) {
+			sexOptionsString+=  p + ": " + runInfo.sexOptions[p] + "<br/>";
+		}
+		
+		$('#sextractor').html(sexOptionsString);
 		console.log('Extended runinfo:', runInfo.sexOptions);
 	}
 	
@@ -289,6 +299,9 @@ var baseColour = 'g';
 				break;
 			case 67: // 'c' pressed, use currently selected object as the comparison
 				updateComparison();
+				break;
+			case 69: // 'e' pressed, export the currently displayed chart to a CSV file
+				exportToCSV(selectedObject);
 				break;
 		}
 	}
