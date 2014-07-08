@@ -28,7 +28,7 @@ var loadedFrameInfo = false;
 var image = null;
 var mousePositionAbsolute = {x: 0, y: 0};
 
-var selectedObject;
+var selectedObject = null;
 var width, height;	
 var context;
 var circles = false, labels=false, selectionActive=false, normaliseActive = true;
@@ -259,13 +259,13 @@ var baseColour = 'g';
 					console.log("Updated comparison object", comparisonObject);
 					updateComparisonTable();
 					recomputeComparisonData(comparisonObject[colour], colour);
-					drawComparisonChart();
 					break;
 				}
 			}
 		writeToCommandWindow("Chosen object id:" + comparisonObject[colour] + " for " + colourDescriptions[colour] + " comparison.");
 
 		}
+		drawComparisonChart();
 		
 		redrawCanvas();
 		
@@ -303,7 +303,40 @@ var baseColour = 'g';
 			case 69: // 'e' pressed, export the currently displayed chart to a CSV file
 				exportToCSV(selectedObject);
 				break;
+			case 37: // 'left arrow' pressed, go to the previous light curve in the list
+				previousLightCurve();
+				break;
+			case 39: // 'right arrow' pressed, go to the next light curve in the list
+				nextLightCurve();
+				break;
 		}
+	}
+
+	function previousLightCurve() {
+		if (selectedObject==null) return;
+		prevID = selectedObject.id - 1;
+		if (prevID<0) prevID = objectList.length - 1;
+		selectedObject = getObjectByID(objectList, prevID);
+		console.log(selectedObject);
+		updateSelectedObject(selectedObject);
+		selectionActive = true;
+		redrawCanvas();
+		async(drawChart, null); 	
+	}
+	
+	function nextLightCurve() {
+		if (selectedObject==null) return;
+		nextID = selectedObject.id + 1;
+		if (nextID< objectList.length) {
+			selectedObject = getObjectByID(objectList, nextID);
+		} else {
+			selectedObject = getObjectByID(objectList, 0);
+		}
+		console.log(selectedObject);
+		updateSelectedObject(selectedObject);
+		selectionActive = true;
+		redrawCanvas();
+		async(drawChart, null); 	
 	}
 	
 	function togglePlotActive(colour) {
