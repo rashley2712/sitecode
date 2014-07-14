@@ -32,7 +32,7 @@ var selectedObject = null;
 var width, height;	
 var context;
 var circles = false, labels=false, selectionActive=false, normaliseActive = true;
-var comparisonActive = true;
+var comparisonActive = true, objectTableActive=false;
 var plotRed = true, plotGreen = true, plotBlue = true;
 var comparisonObject = {r: -1, g: -1, b: -1};
 var baseColour = 'g';
@@ -110,6 +110,7 @@ var baseColour = 'g';
 		$('#labels').prop("checked", labels);
 		$('#circles').prop("checked", circles);
 		$('#normalise').prop("checked", normaliseActive);
+		$('#objecttable').prop("checked", objectTableActive);
 		$('#usecomparison').prop("checked", comparisonActive);
 		$('#baseimage_'+baseColour).prop("checked", true);
 		$('#plotred').prop("checked", plotRed);
@@ -309,6 +310,9 @@ var baseColour = 'g';
 			case 39: // 'right arrow' pressed, go to the next light curve in the list
 				nextLightCurve();
 				break;
+			case 84: // 't' pressed, toggle the object table
+				toggleObjectTable();
+				break;
 		}
 	}
 
@@ -394,6 +398,34 @@ var baseColour = 'g';
 		
 			canvasHelpActive = true;
 		}
+	}
+	
+	function toggleObjectTable() {
+		if (objectTableActive) {
+			objectTableActive = false;
+			$('#ObjectTable').html("");
+		} else {
+			objectTableActive = true;
+			$('#ObjectTable').html(objectTable(objectList));
+		}
+		$('#objecttable').prop("checked", objectTableActive);
+
+	}
+	
+	function setSelectedObjectFromTextbox(newID) {
+		id = parseInt(newID);
+		console.log('id', id);
+		console.log(objectList.length);
+		if (id>0 && id<objectList.length) chooseObjectByID(id);
+	}
+	
+	function chooseObjectByID(id) {
+		selectedObject = getObjectByID(objectList, id);
+		console.log(selectedObject);
+		updateSelectedObject(selectedObject);
+		selectionActive = true;
+		redrawCanvas();
+		async(drawChart, null); 	
 	}
 			
 		
@@ -577,7 +609,13 @@ var baseColour = 'g';
 		tableHTML+= "</td>";
 
 		tableHTML+= "</tr>";
+
+		tableHTML+= "<tr>";
+		
+		tableHTML+= "<td>ID: <input type='text' size='2' id='SelectedObjectID' value='" + selectedObject.id + "' onchange='setSelectedObjectFromTextbox(this.value)'><td>"
+		tableHTML+= "</tr>";
 		tableHTML+= "</table>";
+		
 		$('#selectedobject').html(tableHTML);
 		
 	}
