@@ -76,12 +76,20 @@ var baseColour = 'g';
 	function eventWindowLoaded() {
 		debug("Loading the JSON data");
 		writeToCommandWindow("Run: " + runName);
+		debug("Reduction version: " + runVersion);
 		writeToCommandWindow("Loading the object data... please wait...");
 		displayStatus("Loading data");
-		wcsSolutionFile = runName + "_r_wcs.json";
-		runInfoJSONFile = runName + "_info.json";
-		objectJSONFile = runName + "_objects.json";
-		frameJSONFile = runName + "_frameInfo.json";
+		if (runVersion=="primary") {
+			wcsSolutionFile = runName + "_r_wcs.json";
+			runInfoJSONFile = runName + "_info.json";
+			objectJSONFile = runName + "_objects.json";
+			frameJSONFile = runName + "_frameInfo.json";
+		} else {
+			wcsSolutionFile = runName + "_r_wcs.json";
+			runInfoJSONFile = runName + "_" + runVersion + "_info.json";
+			objectJSONFile = runName + "_" + runVersion + "_objects.json";
+			frameJSONFile = runName + "_" + runVersion + "_frameInfo.json";
+		}
 		
 		$.getJSON(wcsSolutionFile, wcsLoaded);
 
@@ -95,7 +103,6 @@ var baseColour = 'g';
 				});
 
 		$.getJSON(objectJSONFile, parseLoadedObjects);
-		//loadJSON(objectJSONFile, parseLoadedObjects);
 		$.getJSON(frameJSONFile, parseFrameData);
 		
 		initCanvas();
@@ -665,6 +672,7 @@ var baseColour = 'g';
 	function loadPNG() {
 		//load the image
 		filename = runName + "_" + baseColour + ".png";
+		if (runVersion!='primary') filename = runName + "_" + baseColour + "_" + runVersion + ".png";
 		image = new Image();
 		image.src = filename;
 		console.log("Loading", filename);
