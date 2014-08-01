@@ -831,6 +831,8 @@ var baseColour = 'g';
 		console.log(object);
 		displayChartStatus("Drawing chart");
 		
+		
+		
 		baseColours = [];
 		if (plotRed) baseColours.push('r');
 		if (plotGreen) baseColours.push('g');
@@ -945,10 +947,17 @@ var baseColour = 'g';
 			explorer: { actions: ['dragToZoom', 'rightClickToReset'] } 
         	}
 
+		console.log("Clearing the old chart");
+		if (chart!=null) chart.clearChart();
         var chart = new google.visualization.ScatterChart(document.getElementById('main_chart_div'));
         google.visualization.events.addListener(chart, 'ready', chartReady);
         chart.draw(dataTable, options);
-
+        
+   		//chartData = [];
+		//chartData.length = 0; 
+		//chartColours = [];
+		//chartColours.length = 0;
+		//data.length = 0;
 	}
 	
 	function chartReady() {
