@@ -186,9 +186,22 @@ var baseColour = 'g';
 		for (var i in data) {
 			dataObject = JSON.parse(data[i]);
 			frameList.push(dataObject);
+			//console.log(dataObject);
 		}
 		console.log("Frame info:");
 		console.log(frameList.length + " frames");
+		
+		// Check frame info for bad timing frames from the high cadence runs
+		debug("Checking the frame timing info");
+		maxMJD = 0;
+		minMJD = 70000;
+		for (var i in frameList) {
+			frame = frameList[i];
+			if (frame.MJD<minMJD) minMJD = frame.MJD;
+			if (frame.MJD>maxMJD) maxMJD = frame.MJD;
+		}
+		debug("Min MJD: " + minMJD + " Max MJD: " + maxMJD);
+		
 
 		loadedFrameInfo = true;
 		checkAllDataLoaded();
@@ -927,6 +940,16 @@ var baseColour = 'g';
 			}
 		}
 		
+		// Clear out 'bad' data points from the chart data
+		for (var i in chartData) {
+			//console.log(chartData[i]);
+			if (chartData[i][0]==51544) chartData.splice(i, 1);
+		}
+		for (var i in chartData) {
+			//console.log(chartData[i]);
+			if (chartData[i][0]==51544) chartData.splice(i, 1);
+		}
+	
 		
 		// Reveal the chart area...
 		$('#main_chart_div').css('height', '400px');
