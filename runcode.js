@@ -102,7 +102,12 @@ var baseColour = 'g';
 					checkAllDataLoaded();
 				});
 
-		$.getJSON(objectJSONFile, parseLoadedObjects);
+		var jqxhr = $.getJSON(objectJSONFile, parseLoadedObjects)
+				.fail(function() {
+				    console.log( "error" );
+				    writeToCommandWindow("Could not find the object file: " + objectJSONFile);
+				});
+				
 		$.getJSON(frameJSONFile, parseFrameData);
 		
 		initCanvas();
