@@ -17,14 +17,22 @@ function getObjectByID(objects, id) {
 }
 	
 function degToSexString(angle) {
-		degrees = Math.floor(angle);
-		remainder = angle - degrees;
-		minutes = Math.floor(remainder * 60);
-		seconds = ((remainder * 60) - minutes) * 60;
+	negative = 0
+	if (angle<0) {
+		negative = 1;
+		angle = -1 * angle;
+	}
+	degrees = Math.floor(angle);
+	remainder = angle - degrees;
+	minutes = Math.floor(remainder * 60);
+	seconds = ((remainder * 60) - minutes) * 60;
 		
-		outStr = $.format.number(degrees, '00') + ":" + $.format.number(minutes,'00') + ":" + $.format.number(seconds, '00.000');
-		
-		return outStr;
+	outStr = $.format.number(degrees, '00') + ":" + $.format.number(minutes,'00') + ":" + $.format.number(seconds, '00.000');
+	
+	if (negative) {
+		outStr = "-" + outStr;
+	}
+	return outStr;
 	}
 	
 

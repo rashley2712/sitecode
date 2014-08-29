@@ -225,6 +225,7 @@ var baseColour = 'g';
 		raString = degToSexString(runInfo.ra);
 		decString = degToSexString(runInfo.dec);
 		radecString = "&alpha;:" + raString + " &delta;:" + decString;
+		radecString+= "<br>[" + runInfo.ra + "," + runInfo.dec + "]";
 		$('#radec').html(radecString);
 		
 		sexOptionsString = "";
@@ -248,16 +249,6 @@ var baseColour = 'g';
 		loadedWCS = true;
 	}
 	
-	function degToSexString(angle) {
-		degrees = Math.floor(angle);
-		remainder = angle - degrees;
-		minutes = Math.floor(remainder * 60);
-		seconds = ((remainder * 60) - minutes) * 60;
-		
-		outStr = $.format.number(degrees, '00') + ":" + $.format.number(minutes,'00') + ":" + $.format.number(seconds, '00.000');
-		
-		return outStr;
-	}
 	
 	function checkAllDataLoaded() {
 		if (!loadedRunInfo) return;
