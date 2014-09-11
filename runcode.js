@@ -15,6 +15,7 @@ var canvasHelpHTML = "<b>Available commands:</b><br/>\
 					<b>[l]</b> - show object <b>labels</b>. <br/>\
 					<b>[r, g, b]</b> - switch base <b>image</b> colour. <br/>\
 					<b>[c]</b> - set as <b>comparison</b> for this colour.<br/>\
+					<b>[e]</b> - <b>export</b> the data in the current lightcurve to a csv file.<br/>\
 					";
 var canvasHelpActive = false;
 
@@ -225,7 +226,6 @@ var baseColour = 'g';
 		raString = degToSexString(runInfo.ra);
 		decString = degToSexString(runInfo.dec);
 		radecString = "&alpha;:" + raString + " &delta;:" + decString;
-		radecString+= "<br>[" + runInfo.ra + "," + runInfo.dec + "]";
 		$('#radec').html(radecString);
 		
 		sexOptionsString = "";
@@ -833,14 +833,137 @@ var baseColour = 'g';
 	}
 
 
+	function exportToCSV(object) {
+		if (object==null) object = selectedObject;
+		if (object==null) {
+			console.log("No object selected.... returning");
+			return
+		}
+		console.log("Exporting the following object to CSV....");
+		console.log(object);
+
+		baseColours = [];
+		if (plotRed) baseColours.push('r');
+		if (plotGreen) baseColours.push('g');
+		if (plotBlue) baseColours.push('b');
+
+		var numColumns = 0;
+		var coloursForChart = [];
+		for (i in baseColours) {
+			if (object.colourID[baseColours[i]]!=-1) {
+				numColumns++;
+				coloursForChart.push(baseColours[i]);
+			}
+		}
+		
+		console.log("Object has photometry for the following colours:", coloursForChart);
+
+		headings = ["MJD"];
+		for (i in coloursForChart) {
+			headings.push(colourDescriptions[coloursForChart[i]]);
+		}
+
+		chartData = [];
+		chartData.length = 0; 
+		
+		chartData.push(headings);
+		
+		// Put the frame data into the data array
+		for (var i in frameList) {
+			MJD = frameList[i].MJD;
+			temp = [ MJD ];
+			for (var j in coloursForChart) {
+				temp.push(null);
+			}
+			chartData.push(temp);
+		}
+
+		for (var i in coloursForChart) {
+			colour = coloursForChart[i];
+			data = object.photometry[colour];
+			colourIndex = parseInt(i) + 1;
+			for (var j=0; j< data.length; j++) {
+				//console.log(data[j]);
+				frameIndex = parseInt(data[j].frameIndex);
+				//console.log(" -- ", frameList[frameIndex-1].c[colour]);
+				if (comparisonActive && comparisonObject[colour]!=-1) {
+					comparisonReference = frameList[frameIndex-1].c[colour];
+					if (comparisonReference!=-1) measurement = data[j].magnitude/comparisonReference;
+					   else measurement = -1;
+					}
+				else { 
+					measurement = data[j].magnitude; 
+					}
+				if (measurement!=-1) chartData[frameIndex][colourIndex] = measurement;
+			}
+		}
+		
+		if (normaliseActive) {
+			for (var i in coloursForChart) {
+			colour = coloursForChart[i];
+			colourIndex = parseInt(i) + 1;
+			min = 100000;
+			max = 0;
+			for (var j=1; j<chartData.length; j++) {
+				value = chartData[j][colourIndex];
+				if (value!=null) {
+					//console.log(colour, value);
+					if (value>max) max = value;
+					if (value<min) min = value;
+					}
+				}
+			//console.log("Max:", max);
+			//console.log("Min:", min);
+			range = max - min;
+			
+			for (var j=1; j<chartData.length; j++) {
+				value = chartData[j][colourIndex];
+				if (value!=null) {
+					value = (value - min) / range;
+					chartData[j][colourIndex] = value;
+					//console.log(colour, value);
+					
+					}
+				}
+			}
+		}
+		
+		// Clear out 'bad' data points from the chart data
+		for (var i in chartData) {
+			//console.log(chartData[i]);
+			if (chartData[i][0]==51544) chartData.splice(i, 1);
+		}
+		for (var i in chartData) {
+			//console.log(chartData[i]);
+			if (chartData[i][0]==51544) chartData.splice(i, 1);
+		}
+		
+	
+	console.log(chartData);
+	var csvContent = "data:text/csv;charset=utf-8,";
+	
+	chartData.forEach(function(infoArray, index){
+		//console.log(infoArray);
+		dataString = infoArray.join(",");
+		csvContent+= dataString + "\n";
+		//csvContent += index < infoArray.length ? dataString+ "\n" : dataString;
+		});
+	
+	console.log(csvContent); 
+	
+	var encodedUri = encodeURI(csvContent);
+    window.open(encodedUri);
+
+	
+	}
+
+
 	function drawChart(object) {
 		if (object==null) object = selectedObject;
 		
 		console.log("Drawing the chart of....");
 		console.log(object);
 		displayChartStatus("Drawing chart");
-		
-		
 		
 		baseColours = [];
 		if (plotRed) baseColours.push('r');
