@@ -1111,6 +1111,156 @@ var baseColour = 'g';
 		console.log("Chart finished drawing");
 	}
 	
+	function plotPositions() {
+		console.log("Plotting the pixel... (x, y) positions");
+		
+		object = selectedObject;
+		if (object==null) return;
+		console.log(object);
+		
+		var numColours = 0;
+		var coloursAvailable = [];
+		
+		for (i in colours) {
+			var c = colours[i];
+			
+			if (object.colourID[c]!=-1) {
+				numColours++;
+				coloursAvailable.push(c);
+			}
+		}
+		
+		console.log("Pixel data exists for the following colours:", coloursAvailable);
+		
+		headings = ["MJD"];
+		for (i in coloursAvailable) {
+			headings.push(colourDescriptions[coloursAvailable[i]]);
+		}
+		
+		
+		chartData = [];
+		chartData.length = 0; 
+		
+		chartData.push(headings);
+		
+		// Put the frame data into the data array
+		for (var i in frameList) {
+			MJD = frameList[i].MJD;
+			temp = [ MJD ];
+			for (var j in coloursAvailable) {
+				temp.push(null);
+			}
+			chartData.push(temp);
+		}
+		
+		var xmin = 1200;
+		var xmax = 0;
+		for (var i in coloursAvailable) {
+			colour = coloursAvailable[i];
+			var data = object.photometry[colour];
+			colourIndex = parseInt(i) + 1;
+			for (var j=0; j< data.length; j++) {
+				frameIndex = parseInt(data[j].frameIndex);
+				x_pos = data[j].position[0]; 
+				if (x_pos>xmax) xmax = x_pos;
+				if (x_pos<xmin) xmin = x_pos;
+				chartData[frameIndex][colourIndex] = x_pos;
+			}
+		}
+		
+		debug("Xmin, Xmax : " + xmin + ", " + xmax);
+		
+		
+		// Reveal the chart area...
+		$('#xpos_chart_div').css('height', '200px');
+		$('#xpos_chart_div').css('visibility', 'visible');
+	
+		var dataTable = google.visualization.arrayToDataTable(chartData);
+
+		var chartColours = [];
+		for (var c in coloursAvailable) {
+			chartColours.push(colourDescriptions[coloursAvailable[c]]);
+		}
+
+        var options = {
+			title: 'X position of the Object: ' + object.id,
+			colors: chartColours, 
+			pointSize: 1, 
+			explorer: { actions: ['dragToZoom', 'rightClickToReset'] } 
+        	}
+
+		console.log("Clearing the old chart");
+		if (chartX!=null) chartX.clearChart();
+        var chartX = new google.visualization.ScatterChart(document.getElementById('xpos_chart_div'));
+        google.visualization.events.addListener(chartX, 'ready', chartReady);
+        chartX.draw(dataTable, options);
+        
+
+		headings = ["MJD"];
+		for (i in coloursAvailable) {
+			headings.push(colourDescriptions[coloursAvailable[i]]);
+		}
+		
+		
+		chartData = [];
+		chartData.length = 0; 
+		
+		chartData.push(headings);
+		
+		// Put the frame data into the data array
+		for (var i in frameList) {
+			MJD = frameList[i].MJD;
+			temp = [ MJD ];
+			for (var j in coloursAvailable) {
+				temp.push(null);
+			}
+			chartData.push(temp);
+		}
+		
+		var ymin = 1200;
+		var ymax = 0;
+		for (var i in coloursAvailable) {
+			colour = coloursAvailable[i];
+			var data = object.photometry[colour];
+			colourIndex = parseInt(i) + 1;
+			for (var j=0; j< data.length; j++) {
+				frameIndex = parseInt(data[j].frameIndex);
+				y_pos = data[j].position[1]; 
+				if (y_pos>ymax) ymax = y_pos;
+				if (y_pos<ymin) ymin = y_pos;
+				chartData[frameIndex][colourIndex] = y_pos;
+			}
+		}
+		
+		debug("Ymin, Ymax : " + ymin + ", " + ymax);
+		
+		// Reveal the chart area...
+		$('#ypos_chart_div').css('height', '200px');
+		$('#ypos_chart_div').css('visibility', 'visible');
+	
+		var dataTable = google.visualization.arrayToDataTable(chartData);
+
+		var chartColours = [];
+		for (var c in coloursAvailable) {
+			chartColours.push(colourDescriptions[coloursAvailable[c]]);
+		}
+
+        var options = {
+			title: 'Y position of the Object: ' + object.id,
+			colors: chartColours, 
+			pointSize: 1, 
+			explorer: { actions: ['dragToZoom', 'rightClickToReset'] } 
+        	}
+
+		console.log("Clearing the old chart");
+		if (chartY!=null) chartY.clearChart();
+        var chartY = new google.visualization.ScatterChart(document.getElementById('ypos_chart_div'));
+        google.visualization.events.addListener(chartY, 'ready', chartReady);
+        chartY.draw(dataTable, options);
+
+		
+	}
+	
 	function drawComparisonChart() {
 		console.log("Drawing the chart of the comparison....");
 		
@@ -1185,6 +1335,8 @@ var baseColour = 'g';
         var chart = new google.visualization.ScatterChart(document.getElementById('comparison_chart_div'));
         google.visualization.events.addListener(chart, 'ready', chartReady);
         chart.draw(dataTable, options);
+        
+        
 	}
 
 
