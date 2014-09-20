@@ -329,6 +329,10 @@ var baseColour = 'g';
 			case 84: // 't' pressed, toggle the object table
 				toggleObjectTable();
 				break;
+			case 80: // 'p' pressed, plot the object's positions
+				plotPositions();
+				break;
+
 		}
 	}
 
