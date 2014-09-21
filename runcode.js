@@ -28,7 +28,7 @@ var loadedObjectInfo = false;
 var loadedFrameInfo = false;
 var image = null;
 var mousePositionAbsolute = {x: 0, y: 0};
-
+var runVersion = null;
 var selectedObject = null;
 var width, height;	
 var context;
@@ -77,6 +77,7 @@ var baseColour = 'g';
 	function eventWindowLoaded() {
 		debug("Loading the JSON data");
 		writeToCommandWindow("Run: " + runName);
+		if (runVersion == null) runVersion = 'primary';
 		debug("Reduction version: " + runVersion);
 		writeToCommandWindow("Loading the object data... please wait...");
 		displayStatus("Loading data");
