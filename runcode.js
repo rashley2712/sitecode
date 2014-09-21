@@ -37,6 +37,9 @@ var comparisonActive = true, objectTableActive=false;
 var plotRed = true, plotGreen = true, plotBlue = true;
 var comparisonObject = {r: -1, g: -1, b: -1};
 var baseColour = 'g';
+var maxMJD = 0;
+var minMJD = 70000;
+		
 
 	function wcsSolution() {
 		this.equinox = 0;	
@@ -200,8 +203,6 @@ var baseColour = 'g';
 		
 		// Check frame info for bad timing frames from the high cadence runs
 		debug("Checking the frame timing info");
-		maxMJD = 0;
-		minMJD = 70000;
 		for (var i in frameList) {
 			frame = frameList[i];
 			if (frame.MJD<minMJD) minMJD = frame.MJD;
@@ -1091,7 +1092,8 @@ var baseColour = 'g';
 			title: 'Photometry for Object: ' + object.id,
 			colors: chartColours, 
 			pointSize: 1, 
-			explorer: { actions: ['dragToZoom', 'rightClickToReset'] } 
+			explorer: { actions: ['dragToZoom', 'rightClickToReset'] }, 
+			hAxis: { format: '##,###.##', viewWindowMode: 'maximized' },
         	}
 
 		console.log("Clearing the old chart");
@@ -1187,7 +1189,8 @@ var baseColour = 'g';
 			title: 'X position of the Object: ' + object.id,
 			colors: chartColours, 
 			pointSize: 1, 
-			explorer: { actions: ['dragToZoom', 'rightClickToReset'] } 
+			explorer: { actions: ['dragToZoom', 'rightClickToReset'] } ,
+			hAxis: { viewWindowMode: 'maximized' }
         	}
 
 		console.log("Clearing the old chart");
@@ -1250,7 +1253,8 @@ var baseColour = 'g';
 			title: 'Y position of the Object: ' + object.id,
 			colors: chartColours, 
 			pointSize: 1, 
-			explorer: { actions: ['dragToZoom', 'rightClickToReset'] } 
+			explorer: { actions: ['dragToZoom', 'rightClickToReset'] } ,
+			hAxis: { viewWindowMode: 'maximized' }
         	}
 
 		console.log("Clearing the old chart");
@@ -1330,7 +1334,9 @@ var baseColour = 'g';
         var options = {
 			title: 'Comparison photometry',
 			colors: chartColours, 
-			pointSize: 1
+			pointSize: 1,
+			hAxis: { format: '##,###.##', viewWindowMode: 'maximized'}
+			
         	}
 
         var chart = new google.visualization.ScatterChart(document.getElementById('comparison_chart_div'));
